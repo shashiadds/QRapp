@@ -14,6 +14,7 @@ async function request<T>(action: string, payload?: Record<string, unknown>): Pr
 
   const response = await fetch(url, {
     method: payload ? "POST" : "GET",
+    headers: payload ? { "Content-Type": "application/json" } : undefined,
     body: payload ? JSON.stringify({ action, ...payload }) : undefined,
     redirect: "follow",
   });
