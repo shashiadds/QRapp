@@ -100,27 +100,26 @@ function doGet(event) {
 }
 
 function doPost(event) {
-  // Handle preflight OPTIONS request for CORS
-  if (event.postData.type === "application/json" && event.postData.contents) {
-    const body = JSON.parse(event.postData.contents);
-    if (body.action === "adminLogin") {
-      return jsonResponse(adminLogin(body.username, body.password));
-    }
-    if (body.action === "submitReward") {
-      return jsonResponse(
-        submitReward(
-          body.shopId,
-          body.customerName,
-          body.address,
-          body.ipAddress,
-          body.location,
-          body.latitude,
-          body.longitude,
-          body.mobile,
-          Number(body.billAmount)
-        )
-      );
-    }
+  const body = JSON.parse(event.postData.contents || "{}");
+
+  if (body.action === "submitReward") {
+    return jsonResponse(
+      submitReward(
+        body.shopId,
+        body.customerName,
+        body.address,
+        body.ipAddress,
+        body.location,
+        body.latitude,
+        body.longitude,
+        body.mobile,
+        Number(body.billAmount)
+      )
+    );
+  }
+
+  if (body.action === "adminLogin") {
+    return jsonResponse(adminLogin(body.username, body.password));
   }
 
   return jsonResponse({ ok: false, reason: "Unknown action." });
