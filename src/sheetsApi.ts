@@ -54,3 +54,10 @@ export function submitSheetsReward(
     billAmount,
   });
 }
+
+export function adminLogin(password: string, username: string) {
+  return request<{ ok: boolean; isAdmin: boolean }>("adminLogin", {
+    username,
+    password,
+  });
+}

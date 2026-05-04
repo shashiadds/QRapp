@@ -1,10 +1,9 @@
 import React, { useState } from "react";
+import { adminLogin } from "./sheetsApi";
 
 interface AdminLoginProps {
   onLogin: () => void;
 }
-
-const ADMIN_API_URL = "<YOUR_APPS_SCRIPT_DEPLOYED_URL>"; // Replace with your Apps Script web app URL
 
 export default function AdminLogin({ onLogin }: AdminLoginProps) {
   const [username, setUsername] = useState("");
@@ -17,19 +16,14 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(ADMIN_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "adminLogin", username, password }),
-      });
-      const data = await res.json();
+      const data = await adminLogin(password, username);
       if (data.ok && data.isAdmin) {
         onLogin();
       } else {
-        setError(data.reason || "Login failed");
+        setError((data as any).reason || "Login failed");
       }
     } catch (err) {
-      setError("Network error");
+      setError(err instanceof Error ? err.message : "Network error");
     } finally {
       setLoading(false);
     }
