@@ -15,6 +15,7 @@ async function request<T>(action: string, payload?: Record<string, unknown>): Pr
   const response = await fetch(url, {
     method: payload ? "POST" : "GET",
     body: payload ? JSON.stringify({ action, ...payload }) : undefined,
+    redirect: "follow",
   });
 
   if (!response.ok) {

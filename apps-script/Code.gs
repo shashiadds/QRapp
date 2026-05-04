@@ -100,29 +100,37 @@ function doGet(event) {
 }
 
 function doPost(event) {
-  const body = JSON.parse(event.postData.contents || "{}");
-
-  if (body.action === "submitReward") {
-    return jsonResponse(
-      submitReward(
-        body.shopId,
-        body.customerName,
-        body.address,
-        body.ipAddress,
-        body.location,
-        body.latitude,
-        body.longitude,
-        body.mobile,
-        Number(body.billAmount)
-      )
-    );
-  }
-
-  if (body.action === "adminLogin") {
-    return jsonResponse(adminLogin(body.username, body.password));
+  // Handle preflight OPTIONS request for CORS
+  if (event.postData.type === "application/json" && event.postData.contents) {
+    const body = JSON.parse(event.postData.contents);
+    if (body.action === "adminLogin") {
+      return jsonResponse(adminLogin(body.username, body.password));
+    }
+    if (body.action === "submitReward") {
+      return jsonResponse(
+        submitReward(
+          body.shopId,
+          body.customerName,
+          body.address,
+          body.ipAddress,
+          body.location,
+          body.latitude,
+          body.longitude,
+          body.mobile,
+          Number(body.billAmount)
+        )
+      );
+    }
   }
 
   return jsonResponse({ ok: false, reason: "Unknown action." });
+}
+
+function doOptions(e) {
+  return ContentService.createTextOutput()
+    .addHeader("Access-Control-Allow-Origin", "*")
+    .addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+    .addHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
 // Admin authentication logic
@@ -336,7 +344,7 @@ function dateKey(value) {
 }
 
 function jsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify({ ok: true, ...data })).setMimeType(
-    ContentService.MimeType.JSON
-  );
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, ...data }))
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader("Access-Control-Allow-Origin", "*");
 }
