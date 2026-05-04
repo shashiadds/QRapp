@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import AdminLogin from "./AdminLogin";
 import QRCode from "qrcode";
 import {
   Activity,
@@ -23,7 +24,8 @@ import {
 } from "./data";
 import { submitReward } from "./rewardEngine";
 import { isSheetsConfigured, loadSheetsData, submitSheetsReward } from "./sheetsApi";
-import type { FraudSignal, Shop, Transaction } from "./types";
+import type { FraudSignal, Shop, Transaction, VisitorContext } from "./types";
+import { loadVisitorContext } from "./visitorContext";
 
 type View = "customer" | "shop" | "admin";
 
@@ -32,6 +34,13 @@ const currency = new Intl.NumberFormat("en-IN", {
   currency: "INR",
   maximumFractionDigits: 0,
 });
+
+const fallbackVisitorContext: VisitorContext = {
+  ipAddress: "Unknown",
+  location: "Unknown",
+  latitude: null,
+  longitude: null,
+};
 
 function App() {
   const params = new URLSearchParams(window.location.search);
@@ -50,6 +59,7 @@ function App() {
     const saved = localStorage.getItem("smart-mudra-transactions");
     return saved ? JSON.parse(saved) : seedTransactions;
   });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
   useEffect(() => {
     if (isSheetsConfigured) {
@@ -98,11 +108,20 @@ function App() {
         />
       )}
       {view === "admin" && (
-        <AdminDashboard
-          shops={shops}
-          transactions={transactions}
-          fraudSignals={fraudSignals}
-        />
+        !isAdminLoggedIn ? (
+          <AdminLogin onLogin={() => setIsAdminLoggedIn(true)} />
+        ) : (
+          <div>
+            <button style={{ float: "right" }} onClick={() => setIsAdminLoggedIn(false)}>
+              Logout
+            </button>
+            <AdminDashboard
+              shops={shops}
+              transactions={transactions}
+              fraudSignals={fraudSignals}
+            />
+          </div>
+        )
       )}
     </main>
   );
@@ -168,11 +187,18 @@ function CustomerFlow({
   setTransactions: (transactions: Transaction[]) => void;
   setSelectedShopId: (shopId: string) => void;
 }) {
+  const [customerName, setCustomerName] = useState("");
+  const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
   const [billAmount, setBillAmount] = useState("");
   const [phase, setPhase] = useState<"form" | "processing" | "reward">("form");
   const [message, setMessage] = useState("");
   const [reward, setReward] = useState<number | null>(null);
+  const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
+
+  useEffect(() => {
+    loadVisitorContext().then(setVisitorContext);
+  }, []);
 
   const handleSubmit = () => {
     setPhase("processing");
@@ -180,11 +206,26 @@ function CustomerFlow({
 
     window.setTimeout(async () => {
       const result = isSheetsConfigured
-        ? await submitSheetsReward(shop.id, mobile.trim(), Number(billAmount)).catch((error) => ({
+        ? await submitSheetsReward(
+            shop.id,
+            customerName.trim(),
+            address.trim(),
+            mobile.trim(),
+            Number(billAmount),
+            visitorContext
+          ).catch((error) => ({
             ok: false as const,
             reason: error instanceof Error ? error.message : "Could not save reward.",
           }))
-        : submitReward(shop, mobile.trim(), Number(billAmount), transactions);
+        : submitReward(
+            shop,
+            customerName.trim(),
+            address.trim(),
+            mobile.trim(),
+            Number(billAmount),
+            transactions,
+            visitorContext
+          );
 
       if (!result.ok) {
         setPhase("form");
@@ -224,11 +265,28 @@ function CustomerFlow({
               <p>Enter today&apos;s bill details to reveal instant cashback.</p>
             </div>
             <label>
+              Customer name
+              <input
+                autoComplete="name"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+              />
+            </label>
+            <label>
+              Address
+              <textarea
+                autoComplete="street-address"
+                rows={3}
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+              />
+            </label>
+            <label>
               Mobile number
               <input
+                autoComplete="tel"
                 inputMode="numeric"
                 maxLength={10}
-                placeholder="9876543210"
                 value={mobile}
                 onChange={(event) => setMobile(event.target.value.replace(/\D/g, ""))}
               />
@@ -237,7 +295,6 @@ function CustomerFlow({
               Bill amount
               <input
                 inputMode="decimal"
-                placeholder="250"
                 value={billAmount}
                 onChange={(event) => setBillAmount(event.target.value)}
               />
@@ -267,6 +324,9 @@ function CustomerFlow({
               className="secondary-action"
               type="button"
               onClick={() => {
+                setCustomerName("");
+                setAddress("");
+                setMobile("");
                 setBillAmount("");
                 setReward(null);
                 setPhase("form");
@@ -299,7 +359,7 @@ function ShopDashboard({
   const averageBill = approved.length
     ? approved.reduce((sum, item) => sum + item.billAmount, 0) / approved.length
     : 0;
-  const scanUrl = `${window.location.origin}/app?shop=${shop.id}`;
+  const scanUrl = `${window.location.origin}/?shop=${encodeURIComponent(shop.id)}`;
 
   useEffect(() => {
     QRCode.toDataURL(scanUrl, { margin: 1, width: 240 }).then(setQrUrl);
@@ -476,6 +536,7 @@ function TransactionTable({
           <thead>
             <tr>
               <th>Mobile</th>
+              {!compact && <th>Name</th>}
               {!compact && <th>Shop</th>}
               <th>Bill</th>
               <th>Reward</th>
@@ -486,6 +547,7 @@ function TransactionTable({
             {visibleTransactions.map((transaction) => (
               <tr key={transaction.id}>
                 <td>{transaction.mobile}</td>
+                {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{transaction.shopId}</td>}
                 <td>{currency.format(transaction.billAmount)}</td>
                 <td>{currency.format(transaction.reward)}</td>

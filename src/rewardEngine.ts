@@ -1,4 +1,4 @@
-import type { RewardResult, Shop, Transaction } from "./types";
+import type { RewardResult, Shop, Transaction, VisitorContext } from "./types";
 
 const todayKey = (value: string | Date) => {
   const date = typeof value === "string" ? new Date(value) : value;
@@ -27,12 +27,23 @@ export function calculateReward(shop: Shop, billAmount: number): number {
 
 export function submitReward(
   shop: Shop,
+  customerName: string,
+  address: string,
   mobile: string,
   billAmount: number,
-  existingTransactions: Transaction[]
+  existingTransactions: Transaction[],
+  visitorContext: VisitorContext
 ): RewardResult {
   if (shop.status !== "active") {
     return { ok: false, reason: "This shop campaign is currently paused." };
+  }
+
+  if (!customerName.trim()) {
+    return { ok: false, reason: "Enter customer name." };
+  }
+
+  if (!address.trim()) {
+    return { ok: false, reason: "Enter customer address." };
   }
 
   if (!/^[6-9]\d{9}$/.test(mobile)) {
@@ -64,6 +75,12 @@ export function submitReward(
     ok: true,
     transaction: {
       id: makeId(),
+      customerName: customerName.trim(),
+      address: address.trim(),
+      ipAddress: visitorContext.ipAddress,
+      location: visitorContext.location,
+      latitude: visitorContext.latitude,
+      longitude: visitorContext.longitude,
       mobile,
       shopId: shop.id,
       billAmount,

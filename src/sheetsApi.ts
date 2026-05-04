@@ -1,4 +1,4 @@
-import type { AppData, RewardResult } from "./types";
+import type { AppData, RewardResult, VisitorContext } from "./types";
 
 const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL as string | undefined;
 
@@ -33,6 +33,23 @@ export function loadSheetsData() {
   return request<AppData>("bootstrap");
 }
 
-export function submitSheetsReward(shopId: string, mobile: string, billAmount: number) {
-  return request<RewardResult>("submitReward", { shopId, mobile, billAmount });
+export function submitSheetsReward(
+  shopId: string,
+  customerName: string,
+  address: string,
+  mobile: string,
+  billAmount: number,
+  visitorContext: VisitorContext
+) {
+  return request<RewardResult>("submitReward", {
+    shopId,
+    customerName,
+    address,
+    ipAddress: visitorContext.ipAddress,
+    location: visitorContext.location,
+    latitude: visitorContext.latitude,
+    longitude: visitorContext.longitude,
+    mobile,
+    billAmount,
+  });
 }

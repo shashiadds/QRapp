@@ -48,46 +48,6 @@ export const shops: Shop[] = [
   },
 ];
 
-export const transactions: Transaction[] = [
-  {
-    id: "TRX-1041",
-    mobile: "9876543210",
-    shopId: "KaleMedical",
-    billAmount: 340,
-    reward: 20,
-    status: "approved",
-    timestamp: "2026-05-03T09:15:00+05:30",
-  },
-  {
-    id: "TRX-1042",
-    mobile: "9822014455",
-    shopId: "KaleMedical",
-    billAmount: 128,
-    reward: 10,
-    status: "approved",
-    timestamp: "2026-05-03T10:30:00+05:30",
-  },
-  {
-    id: "TRX-1043",
-    mobile: "9766881122",
-    shopId: "PatilStore",
-    billAmount: 720,
-    reward: 50,
-    status: "approved",
-    timestamp: "2026-05-02T19:05:00+05:30",
-  },
-  {
-    id: "TRX-1044",
-    mobile: "9876543210",
-    shopId: "KaleMedical",
-    billAmount: 80,
-    reward: 5,
-    status: "blocked",
-    timestamp: "2026-05-03T12:10:00+05:30",
-  },
-];
+export const transactions: Transaction[] = [];
 
-export const fraudSignals: FraudSignal[] = [
-  { mobile: "9876543210", shopId: "KaleMedical", attempts: 2, status: "watch" },
-  { mobile: "9000001111", shopId: "PatilStore", attempts: 5, status: "blocked" },
-];
+export const fraudSignals: FraudSignal[] = [];

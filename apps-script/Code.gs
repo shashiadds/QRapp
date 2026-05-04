@@ -2,12 +2,28 @@ const SHEETS = {
   shops: "shops",
   transactions: "transactions",
   fraud: "fraud",
+  admins: "admins",
 };
 
 const HEADERS = {
   shops: ["id", "name", "category", "status", "maxReward", "costPerScan", "rewardBands"],
-  transactions: ["id", "mobile", "shopId", "billAmount", "reward", "status", "timestamp"],
+  transactions: [
+    "id",
+    "mobile",
+    "shopId",
+    "billAmount",
+    "reward",
+    "status",
+    "timestamp",
+    "customerName",
+    "address",
+    "ipAddress",
+    "location",
+    "latitude",
+    "longitude",
+  ],
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
+  admins: ["username", "password"],
 };
 
 const SEED_SHOPS = [
@@ -49,16 +65,24 @@ function setupSmartMudraSheet() {
 
   Object.keys(SHEETS).forEach((key) => {
     const name = SHEETS[key];
-    const sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
-    sheet.clear();
-    sheet.getRange(1, 1, 1, HEADERS[key].length).setValues([HEADERS[key]]);
-    sheet.setFrozenRows(1);
+    let sheet = spreadsheet.getSheetByName(name);
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(name);
+      sheet.getRange(1, 1, 1, HEADERS[key].length).setValues([HEADERS[key]]);
+      sheet.setFrozenRows(1);
+      // Seed shops and admins only if sheet is new
+      if (key === "shops") {
+        sheet.getRange(2, 1, SEED_SHOPS.length, HEADERS.shops.length).setValues(SEED_SHOPS);
+      }
+      if (key === "admins") {
+        // Add a default admin (username: admin, password: admin123) - change after first login
+        sheet.getRange(2, 1, 1, 2).setValues([["admin", "admin123"]]);
+      }
+    } else {
+      // Only ensure headers if sheet exists, do not clear data
+      ensureHeaders(name, HEADERS[key]);
+    }
   });
-
-  spreadsheet
-    .getSheetByName(SHEETS.shops)
-    .getRange(2, 1, SEED_SHOPS.length, HEADERS.shops.length)
-    .setValues(SEED_SHOPS);
 }
 
 function doGet(event) {
@@ -79,13 +103,58 @@ function doPost(event) {
   const body = JSON.parse(event.postData.contents || "{}");
 
   if (body.action === "submitReward") {
-    return jsonResponse(submitReward(body.shopId, body.mobile, Number(body.billAmount)));
+    return jsonResponse(
+      submitReward(
+        body.shopId,
+        body.customerName,
+        body.address,
+        body.ipAddress,
+        body.location,
+        body.latitude,
+        body.longitude,
+        body.mobile,
+        Number(body.billAmount)
+      )
+    );
+  }
+
+  if (body.action === "adminLogin") {
+    return jsonResponse(adminLogin(body.username, body.password));
   }
 
   return jsonResponse({ ok: false, reason: "Unknown action." });
 }
 
-function submitReward(shopId, mobile, billAmount) {
+// Admin authentication logic
+function readAdmins() {
+  return readObjects(SHEETS.admins).map((row) => ({
+    username: String(row.username),
+    password: String(row.password),
+  }));
+}
+
+function adminLogin(username, password) {
+  const admins = readAdmins();
+  const found = admins.find(
+    (admin) => admin.username === username && admin.password === password
+  );
+  if (found) {
+    return { ok: true, isAdmin: true };
+  }
+  return { ok: false, reason: "Invalid username or password." };
+}
+
+function submitReward(
+  shopId,
+  customerName,
+  address,
+  ipAddress,
+  location,
+  latitude,
+  longitude,
+  mobile,
+  billAmount
+) {
   const shop = readShops().find((item) => item.id === shopId);
 
   if (!shop) {
@@ -94,6 +163,14 @@ function submitReward(shopId, mobile, billAmount) {
 
   if (shop.status !== "active") {
     return { ok: false, reason: "This shop campaign is currently paused." };
+  }
+
+  if (!String(customerName || "").trim()) {
+    return { ok: false, reason: "Enter customer name." };
+  }
+
+  if (!String(address || "").trim()) {
+    return { ok: false, reason: "Enter customer address." };
   }
 
   if (!/^[6-9]\d{9}$/.test(String(mobile))) {
@@ -123,6 +200,12 @@ function submitReward(shopId, mobile, billAmount) {
 
   const transaction = {
     id: makeTransactionId(),
+    customerName: String(customerName).trim(),
+    address: String(address).trim(),
+    ipAddress: String(ipAddress || "Unknown"),
+    location: String(location || "Unknown"),
+    latitude: latitude === null || latitude === undefined ? "" : Number(latitude),
+    longitude: longitude === null || longitude === undefined ? "" : Number(longitude),
     mobile: String(mobile),
     shopId: shop.id,
     billAmount,
@@ -168,6 +251,12 @@ function readTransactions() {
   return readObjects(SHEETS.transactions)
     .map((row) => ({
       id: String(row.id),
+      customerName: String(row.customerName || ""),
+      address: String(row.address || ""),
+      ipAddress: String(row.ipAddress || ""),
+      location: String(row.location || ""),
+      latitude: row.latitude === "" ? null : Number(row.latitude),
+      longitude: row.longitude === "" ? null : Number(row.longitude),
       mobile: String(row.mobile),
       shopId: String(row.shopId),
       billAmount: Number(row.billAmount),
@@ -220,8 +309,22 @@ function readObjects(sheetName) {
 }
 
 function appendObject(sheetName, headers, object) {
+  ensureHeaders(sheetName, headers);
   const row = headers.map((header) => object[header]);
   SpreadsheetApp.getActive().getSheetByName(sheetName).appendRow(row);
+}
+
+function ensureHeaders(sheetName, headers) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), headers.length)).getValues()[0];
+  const missingHeaders = headers.filter((header) => currentHeaders.indexOf(header) === -1);
+
+  if (!missingHeaders.length) {
+    return;
+  }
+
+  const nextColumn = currentHeaders.filter((header) => header !== "").length + 1;
+  sheet.getRange(1, nextColumn, 1, missingHeaders.length).setValues([missingHeaders]);
 }
 
 function makeTransactionId() {

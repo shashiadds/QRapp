@@ -18,6 +18,12 @@ export type Shop = {
 
 export type Transaction = {
   id: string;
+  customerName: string;
+  address: string;
+  ipAddress: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
   mobile: string;
   shopId: string;
   billAmount: number;
@@ -41,4 +47,11 @@ export type AppData = {
   shops: Shop[];
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
+};
+
+export type VisitorContext = {
+  ipAddress: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
 };
