@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { adminLogin } from "./sheetsApi";
+import { authLogin } from "./sheetsApi";
 
-interface AdminLoginProps {
-  onLogin: () => void;
+interface LoginProps {
+  title: string;
+  expectedRole?: string;
+  onLogin: (session: { role: string; shopId?: string }) => void;
 }
 
-export default function AdminLogin({ onLogin }: AdminLoginProps) {
+export default function Login({ title, expectedRole, onLogin }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,9 +18,13 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
     setLoading(true);
     setError("");
     try {
-      const data = await adminLogin(password, username);
-      if (data.ok && data.isAdmin) {
-        onLogin();
+      const data = await authLogin(password, username);
+      if (data.ok && data.role) {
+        if (expectedRole && data.role !== expectedRole) {
+          setError(`You are not authorized to view this page.`);
+        } else {
+          onLogin({ role: data.role, shopId: data.shopId });
+        }
       } else {
         setError((data as any).reason || "Login failed");
       }
@@ -31,7 +37,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 320, margin: "2rem auto", padding: 24, border: "1px solid #ccc", borderRadius: 8 }}>
-      <h2>Admin Login</h2>
+      <h2>{title}</h2>
       <div style={{ marginBottom: 12 }}>
         <input
           type="text"

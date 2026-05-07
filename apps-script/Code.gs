@@ -23,7 +23,7 @@ const HEADERS = {
     "longitude",
   ],
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
-  admins: ["username", "password"],
+  admins: ["username", "password", "role", "shopId"],
 };
 
 const SEED_SHOPS = [
@@ -130,6 +130,8 @@ function readAdmins() {
   return readObjects(SHEETS.admins).map((row) => ({
     username: String(row.username),
     password: String(row.password),
+    role: String(row.role || "admin"), // fallback for existing rows
+    shopId: String(row.shopId || ""),
   }));
 }
 
@@ -139,7 +141,7 @@ function adminLogin(username, password) {
     (admin) => admin.username === username && admin.password === password
   );
   if (found) {
-    return { ok: true, isAdmin: true };
+    return { ok: true, isAdmin: found.role === "admin", role: found.role, shopId: found.shopId };
   }
   return { ok: false, reason: "Invalid username or password." };
 }

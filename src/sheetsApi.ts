@@ -56,8 +56,8 @@ export function submitSheetsReward(
   });
 }
 
-export function adminLogin(password: string, username: string) {
-  return request<{ ok: boolean; isAdmin: boolean }>("adminLogin", {
+export function authLogin(password: string, username: string) {
+  return request<{ ok: boolean; role?: string; shopId?: string; isAdmin?: boolean }>("adminLogin", {
     username,
     password,
   });

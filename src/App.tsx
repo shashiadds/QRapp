@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import AdminLogin from "./AdminLogin";
+import Login from "./Login";
 import QRCode from "qrcode";
 import {
   Activity,
@@ -28,6 +28,7 @@ import type { FraudSignal, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 
 type View = "customer" | "shop" | "admin";
+type Session = { role: string; shopId?: string } | null;
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -59,7 +60,7 @@ function App() {
     const saved = localStorage.getItem("smart-mudra-transactions");
     return saved ? JSON.parse(saved) : seedTransactions;
   });
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [session, setSession] = useState<Session>(null);
 
   useEffect(() => {
     if (isSheetsConfigured) {
@@ -100,19 +101,29 @@ function App() {
         />
       )}
       {view === "shop" && (
-        <ShopDashboard
-          shop={selectedShop}
-          shops={shops}
-          transactions={transactions}
-          setSelectedShopId={setSelectedShopId}
-        />
-      )}
-      {view === "admin" && (
-        !isAdminLoggedIn ? (
-          <AdminLogin onLogin={() => setIsAdminLoggedIn(true)} />
+        !session ? (
+          <Login title="Shop Login" onLogin={setSession} />
         ) : (
           <div>
-            <button style={{ float: "right" }} onClick={() => setIsAdminLoggedIn(false)}>
+            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
+              Logout
+            </button>
+            <ShopDashboard
+              shop={session.role === "shopAdmin" && session.shopId ? shops.find((s) => s.id === session.shopId) || selectedShop : selectedShop}
+              shops={shops}
+              transactions={transactions}
+              setSelectedShopId={setSelectedShopId}
+              isShopAdmin={session.role === "shopAdmin"}
+            />
+          </div>
+        )
+      )}
+      {view === "admin" && (
+        !session || session.role !== "admin" ? (
+          <Login title="Admin Login" expectedRole="admin" onLogin={setSession} />
+        ) : (
+          <div>
+            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
               Logout
             </button>
             <AdminDashboard
@@ -346,11 +357,13 @@ function ShopDashboard({
   shops,
   transactions,
   setSelectedShopId,
+  isShopAdmin,
 }: {
   shop: Shop;
   shops: Shop[];
   transactions: Transaction[];
   setSelectedShopId: (shopId: string) => void;
+  isShopAdmin?: boolean;
 }) {
   const [qrUrl, setQrUrl] = useState("");
   const shopTransactions = transactions.filter((transaction) => transaction.shopId === shop.id);
@@ -372,13 +385,15 @@ function ShopDashboard({
           <span>Shop Dashboard</span>
           <h1>{shop.name}</h1>
         </div>
-        <select value={shop.id} onChange={(event) => setSelectedShopId(event.target.value)}>
-          {shops.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+        {!isShopAdmin && (
+          <select value={shop.id} onChange={(event) => setSelectedShopId(event.target.value)}>
+            {shops.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <MetricGrid
