@@ -125,13 +125,6 @@ function doPost(event) {
   return jsonResponse({ ok: false, reason: "Unknown action." });
 }
 
-function doOptions(e) {
-  return ContentService.createTextOutput()
-    .addHeader("Access-Control-Allow-Origin", "*")
-    .addHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-    .addHeader("Access-Control-Allow-Headers", "Content-Type");
-}
-
 // Admin authentication logic
 function readAdmins() {
   return readObjects(SHEETS.admins).map((row) => ({
@@ -343,7 +336,7 @@ function dateKey(value) {
 }
 
 function jsonResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify({ ok: true, ...data }))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader("Access-Control-Allow-Origin", "*");
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, ...data })).setMimeType(
+    ContentService.MimeType.JSON
+  );
 }

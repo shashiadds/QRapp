@@ -1,6 +1,6 @@
 import type { AppData, RewardResult, VisitorContext } from "./types";
 
-const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL as string | undefined;
+const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
 export const isSheetsConfigured = Boolean(scriptUrl);
 
@@ -14,7 +14,7 @@ async function request<T>(action: string, payload?: Record<string, unknown>): Pr
 
   const response = await fetch(url, {
     method: payload ? "POST" : "GET",
-    headers: payload ? { "Content-Type": "application/json" } : undefined,
+    headers: payload ? { "Content-Type": "text/plain;charset=utf-8" } : undefined,
     body: payload ? JSON.stringify({ action, ...payload }) : undefined,
     redirect: "follow",
   });
