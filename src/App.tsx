@@ -168,20 +168,34 @@ function App() {
         )
       )}
       {view === "shop" && (
-        !session ? (
-          <Login title="Shop Login" onLogin={setSession} />
+        !session || session.role !== "shopAdmin" ? (
+          <Login title="Shop Login" expectedRole="shopAdmin" onLogin={setSession} />
         ) : (
           <div>
             <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
               Logout
             </button>
-            <ShopDashboard
-              shop={session.role === "shopAdmin" && session.shopId ? shops.find((s) => s.id === session.shopId) || shops[0] : (selectedShop || shops[0] || seedShops[0])}
-              shops={shops}
-              transactions={transactions}
-              setSelectedShopId={setSelectedShopId}
-              isShopAdmin={session.role === "shopAdmin"}
-            />
+            {session.shopId && shops.some((shop) => shop.id === session.shopId) ? (
+              <ShopDashboard
+                shop={shops.find((shop) => shop.id === session.shopId)!}
+                shops={shops}
+                transactions={transactions}
+                setSelectedShopId={setSelectedShopId}
+                isShopAdmin
+              />
+            ) : (
+              <section className="dashboard">
+                <div className="surface">
+                  <div className="section-title">
+                    <Store size={20} />
+                    <h2>Shop account not linked</h2>
+                  </div>
+                  <p className="muted-note">
+                    This login is missing a shop ID. Please check the admins sheet for this user.
+                  </p>
+                </div>
+              </section>
+            )}
           </div>
         )
       )}

@@ -135,12 +135,27 @@ function doPost(event) {
 
 // Admin authentication logic
 function readAdmins() {
+  const shopIds = readShops().map((shop) => shop.id);
   return readObjects(SHEETS.admins).map((row) => ({
     username: String(row.username),
     password: String(row.password),
-    role: String(row.role || "admin"), // fallback for existing rows
-    shopId: String(row.shopId || ""),
-  }));
+    role: String(row.role || "").trim(),
+    shopId: String(row.shopId || "").trim(),
+  })).map((admin) => {
+    if (admin.role === "shopAdmin" && !admin.shopId && shopIds.indexOf(admin.username) !== -1) {
+      return { ...admin, shopId: admin.username };
+    }
+
+    if (admin.role) {
+      return admin;
+    }
+
+    if (shopIds.indexOf(admin.username) !== -1) {
+      return { ...admin, role: "shopAdmin", shopId: admin.shopId || admin.username };
+    }
+
+    return { ...admin, role: "admin" };
+  });
 }
 
 function adminLogin(username, password) {
