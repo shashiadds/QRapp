@@ -125,12 +125,14 @@ function App() {
             setSelectedShopId={setSelectedShopId}
           />
         ) : (
-          <section className="customer-shell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 1rem', textAlign: 'center' }}>
-            <QrCode size={56} style={{ color: '#059669', marginBottom: '1.5rem' }} />
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Scan to win!</h2>
-            <p style={{ color: '#4b5563', maxWidth: '320px', lineHeight: 1.5 }}>
-              Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant cashback.
-            </p>
+          <section className="customer-shell">
+            <div className="customer-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', textAlign: 'center', minHeight: '400px' }}>
+              <QrCode size={64} style={{ color: '#059669', marginBottom: '1.5rem' }} />
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Scan to win!</h2>
+              <p style={{ color: '#4b5563', maxWidth: '320px', lineHeight: 1.5 }}>
+                Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant cashback.
+              </p>
+            </div>
           </section>
         )
       )}
