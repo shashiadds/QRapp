@@ -735,15 +735,20 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Mobile", "Name", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp"];
+            const headers = ["Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = transactions.map(tx => [
               tx.mobile,
               tx.customerName || "Walk-in",
+              tx.address || "",
               tx.shopId,
               tx.billAmount,
               tx.reward,
               tx.status,
-              tx.timestamp
+              tx.timestamp,
+              tx.ipAddress,
+              tx.location,
+              tx.latitude ?? "",
+              tx.longitude ?? ""
             ]);
             downloadCSV("transactions.csv", [headers, ...rows]);
           }}
