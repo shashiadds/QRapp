@@ -342,3 +342,46 @@ function jsonResponse(data) {
     ContentService.MimeType.JSON
   );
 }
+
+function emailDailyReport() {
+  const emailAddress = "shashi.adsure@gmail.com";
+  const subject = "Smart Mudra - Daily Report";
+  const body = "Please find attached the daily report copy for Smart Mudra.";
+  
+  const spreadsheetId = "1WfgPOw_ulgFCvPWcBxfy92s2prx8WWbUv4EKC-D5QHA";
+  const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  const url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=xlsx";
+  
+  const token = ScriptApp.getOAuthToken();
+  const response = UrlFetchApp.fetch(url, {
+    headers: {
+      'Authorization': 'Bearer ' + token
+    }
+  });
+  
+  const blob = response.getBlob().setName(spreadsheet.getName() + " - " + dateKey(new Date()) + ".xlsx");
+  
+  MailApp.sendEmail({
+    to: emailAddress,
+    subject: subject,
+    body: body,
+    attachments: [blob]
+  });
+}
+
+function setupDailyReportTrigger() {
+  // Clear existing triggers to avoid duplicates
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'emailDailyReport') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  
+  // Set up daily trigger (runs between 23:00 and midnight)
+  ScriptApp.newTrigger('emailDailyReport')
+    .timeBased()
+    .everyDays(1)
+    .atHour(23)
+    .create();
+}
