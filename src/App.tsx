@@ -523,10 +523,6 @@ function AdminDashboard({
 
   const approved = transactions.filter((transaction) => transaction.status === "approved");
   const payout = approved.reduce((sum, item) => sum + item.reward, 0);
-  const revenue = approved.reduce((sum, item) => {
-    const shop = shops.find((candidate) => candidate.id === item.shopId);
-    return sum + (shop?.costPerScan ?? 0);
-  }, 0);
 
   const handleAddShop = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -597,7 +593,6 @@ function AdminDashboard({
         metrics={[
           { label: "Platform scans", value: transactions.length.toString(), icon: ScanLine },
           { label: "Total discount given", value: currency.format(payout), icon: Gift },
-          { label: "Platform revenue", value: currency.format(revenue), icon: IndianRupee },
           { label: "Active shops", value: shops.filter((shop) => shop.status === "active").length.toString(), icon: Store },
         ]}
       />
