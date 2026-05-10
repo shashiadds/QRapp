@@ -69,9 +69,9 @@ function downloadCSV(filename: string, rows: any[][]) {
 
 function App() {
   const params = new URLSearchParams(window.location.search);
-  const initialShopId = params.get("shop") ?? seedShops[0].id;
+  const initialShopId = params.get("shop");
   const [view, setView] = useState<View>("customer");
-  const [selectedShopId, setSelectedShopId] = useState(initialShopId);
+  const [selectedShopId, setSelectedShopId] = useState<string | null>(initialShopId);
   const [shops, setShops] = useState<Shop[]>(seedShops);
   const [fraudSignals, setFraudSignals] = useState<FraudSignal[]>(seedFraudSignals);
   const [dataStatus, setDataStatus] = useState(
@@ -110,19 +110,29 @@ function App() {
       });
   }, []);
 
-  const selectedShop = shops.find((shop) => shop.id === selectedShopId) ?? shops[0] ?? seedShops[0];
+  const selectedShop = shops.find((shop) => shop.id === selectedShopId);
 
   return (
     <main>
       <TopBar view={view} setView={setView} dataStatus={dataStatus} />
       {view === "customer" && (
-        <CustomerFlow
-          shop={selectedShop}
-          shops={shops}
-          transactions={transactions}
-          setTransactions={setTransactions}
-          setSelectedShopId={setSelectedShopId}
-        />
+        selectedShop ? (
+          <CustomerFlow
+            shop={selectedShop}
+            shops={shops}
+            transactions={transactions}
+            setTransactions={setTransactions}
+            setSelectedShopId={setSelectedShopId}
+          />
+        ) : (
+          <section className="customer-shell" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 1rem', textAlign: 'center' }}>
+            <QrCode size={56} style={{ color: '#059669', marginBottom: '1.5rem' }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Scan to win!</h2>
+            <p style={{ color: '#4b5563', maxWidth: '320px', lineHeight: 1.5 }}>
+              Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant cashback.
+            </p>
+          </section>
+        )
       )}
       {view === "shop" && (
         !session ? (
@@ -133,7 +143,7 @@ function App() {
               Logout
             </button>
             <ShopDashboard
-              shop={session.role === "shopAdmin" && session.shopId ? shops.find((s) => s.id === session.shopId) || selectedShop : selectedShop}
+              shop={session.role === "shopAdmin" && session.shopId ? shops.find((s) => s.id === session.shopId) || shops[0] : (selectedShop || shops[0] || seedShops[0])}
               shops={shops}
               transactions={transactions}
               setSelectedShopId={setSelectedShopId}
