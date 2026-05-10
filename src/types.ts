@@ -1,4 +1,4 @@
-export type ShopStatus = "active" | "paused";
+export type ShopStatus = "active" | "paused" | "deleted";
 
 export type RewardBand = {
   reward: number;

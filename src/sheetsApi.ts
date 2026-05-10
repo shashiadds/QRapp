@@ -68,3 +68,9 @@ export function addSheetsShop(shop: Partial<Shop>) {
     shop,
   });
 }
+
+export function deleteSheetsShop(shopId: string) {
+  return request<{ ok: boolean; shop: Shop }>("deleteShop", {
+    shopId,
+  });
+}

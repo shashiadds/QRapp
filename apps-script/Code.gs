@@ -126,6 +126,10 @@ function doPost(event) {
     return jsonResponse(addShop(body.shop));
   }
 
+  if (body.action === "deleteShop") {
+    return jsonResponse(deleteShop(body.shopId));
+  }
+
   return jsonResponse({ ok: false, reason: "Unknown action." });
 }
 
@@ -182,6 +186,27 @@ function addShop(shopData) {
   return { ok: true, shop: newShop, credentials: { username: shopId, password: defaultPassword } };
 }
 
+function deleteShop(shopId) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.shops);
+  ensureHeaders(SHEETS.shops, HEADERS.shops);
+
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idIndex = headers.indexOf("id");
+  const statusIndex = headers.indexOf("status");
+  const targetShopId = String(shopId);
+
+  for (let index = 1; index < values.length; index += 1) {
+    if (String(values[index][idIndex]) === targetShopId) {
+      sheet.getRange(index + 1, statusIndex + 1).setValue("deleted");
+      const shop = readShops().find((item) => item.id === targetShopId);
+      return { ok: true, shop: shop };
+    }
+  }
+
+  return { ok: false, reason: "Shop not found." };
+}
+
 function submitReward(
   shopId,
   customerName,
@@ -200,7 +225,7 @@ function submitReward(
   }
 
   if (shop.status !== "active") {
-    return { ok: false, reason: "This shop campaign is currently paused." };
+    return { ok: false, reason: "This shop is not accepting new scans." };
   }
 
   if (!String(customerName || "").trim()) {

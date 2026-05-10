@@ -35,7 +35,7 @@ export function submitReward(
   visitorContext: VisitorContext
 ): RewardResult {
   if (shop.status !== "active") {
-    return { ok: false, reason: "This shop campaign is currently paused." };
+    return { ok: false, reason: "This shop is not accepting new scans." };
   }
 
   if (!customerName.trim()) {

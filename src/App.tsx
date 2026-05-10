@@ -14,6 +14,7 @@ import {
   Settings2,
   ShieldCheck,
   Store,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
@@ -23,7 +24,7 @@ import {
   transactions as seedTransactions,
 } from "./data";
 import { submitReward } from "./rewardEngine";
-import { isSheetsConfigured, loadSheetsData, submitSheetsReward, addSheetsShop } from "./sheetsApi";
+import { isSheetsConfigured, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop } from "./sheetsApi";
 import type { FraudSignal, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 
@@ -89,7 +90,13 @@ function App() {
   const initialShopId = params.get("shop");
   const [view, setView] = useState<View>("customer");
   const [selectedShopId, setSelectedShopId] = useState<string | null>(initialShopId);
-  const [shops, setShops] = useState<Shop[]>(seedShops);
+  const [shops, setShops] = useState<Shop[]>(() => {
+    if (isSheetsConfigured) {
+      return seedShops;
+    }
+    const saved = localStorage.getItem("smart-mudra-shops");
+    return saved ? JSON.parse(saved) : seedShops;
+  });
   const [fraudSignals, setFraudSignals] = useState<FraudSignal[]>(seedFraudSignals);
   const [dataStatus, setDataStatus] = useState(
     isSheetsConfigured ? "Connecting to Google Sheets..." : "Local demo mode"
@@ -109,6 +116,13 @@ function App() {
     }
     localStorage.setItem("smart-mudra-transactions", JSON.stringify(transactions));
   }, [transactions]);
+
+  useEffect(() => {
+    if (isSheetsConfigured) {
+      return;
+    }
+    localStorage.setItem("smart-mudra-shops", JSON.stringify(shops));
+  }, [shops]);
 
   useEffect(() => {
     if (!isSheetsConfigured) {
@@ -320,7 +334,15 @@ function CustomerFlow({
           </div>
         </div>
 
-        {phase === "form" && (
+        {shop.status !== "active" && (
+          <div className="reward-reveal">
+            <Store size={42} />
+            <h2>Shop unavailable</h2>
+            <p>This Smart Mudra QR is no longer accepting new scans.</p>
+          </div>
+        )}
+
+        {shop.status === "active" && phase === "form" && (
           <div className="form-stack">
             <div className="headline">
               <Gift size={34} />
@@ -370,14 +392,14 @@ function CustomerFlow({
           </div>
         )}
 
-        {phase === "processing" && (
+        {shop.status === "active" && phase === "processing" && (
           <div className="processing">
             <div className="spinner" />
             <h2>Checking reward</h2>
           </div>
         )}
 
-        {phase === "reward" && (
+        {shop.status === "active" && phase === "reward" && (
           <div className="reward-reveal">
             <CheckCircle2 size={42} />
             <span>You won</span>
@@ -389,7 +411,7 @@ function CustomerFlow({
           </div>
         )}
 
-        {phase === "thankYou" && (
+        {shop.status === "active" && phase === "thankYou" && (
           <div className="reward-reveal">
             <Gift size={42} />
             <h2>Thank You for Shopping!</h2>
@@ -433,6 +455,7 @@ function ShopDashboard({
         <div>
           <span>Shop Dashboard</span>
           <h1>{shop.name}</h1>
+          {shop.status !== "active" && <span>This shop is {shop.status}; new scans are disabled.</span>}
         </div>
         {!isShopAdmin && (
           <select value={shop.id} onChange={(event) => setSelectedShopId(event.target.value)}>
@@ -460,12 +483,18 @@ function ShopDashboard({
             <QrCode size={20} />
             <h2>QR link</h2>
           </div>
-          {qrUrl && <img alt={`${shop.name} QR code`} src={qrUrl} />}
-          <code>{scanUrl}</code>
-          <a className="download-link" href={qrUrl} download={`${shop.id}-smart-mudra-qr.png`}>
-            <Download size={18} />
-            Download QR
-          </a>
+          {shop.status === "active" ? (
+            <>
+              {qrUrl && <img alt={`${shop.name} QR code`} src={qrUrl} />}
+              <code>{scanUrl}</code>
+              <a className="download-link" href={qrUrl} download={`${shop.id}-smart-mudra-qr.png`}>
+                <Download size={18} />
+                Download QR
+              </a>
+            </>
+          ) : (
+            <p className="muted-note">QR downloads are disabled because this shop is not active.</p>
+          )}
         </section>
 
         <TransactionTable transactions={shopTransactions} compact />
@@ -489,6 +518,7 @@ function AdminDashboard({
   const [newShopName, setNewShopName] = useState("");
   const [newShopCategory, setNewShopCategory] = useState("General");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingShopId, setDeletingShopId] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
 
   const approved = transactions.filter((transaction) => transaction.status === "approved");
@@ -521,6 +551,33 @@ function AdminDashboard({
       alert("Error adding shop.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteShop = async (shop: Shop) => {
+    if (shop.status === "deleted" || deletingShopId) return;
+
+    const shouldDelete = window.confirm(
+      `Delete ${shop.name}? Old transactions will stay in reports, but this shop will stop accepting new scans.`
+    );
+    if (!shouldDelete) return;
+
+    setDeletingShopId(shop.id);
+    try {
+      if (isSheetsConfigured) {
+        const result = await deleteSheetsShop(shop.id);
+        if (!result.ok) {
+          alert("Failed to delete shop.");
+          return;
+        }
+        setShops(shops.map((item) => (item.id === shop.id ? result.shop : item)));
+      } else {
+        setShops(shops.map((item) => (item.id === shop.id ? { ...item, status: "deleted" } : item)));
+      }
+    } catch (err) {
+      alert("Error deleting shop.");
+    } finally {
+      setDeletingShopId(null);
     }
   };
 
@@ -594,7 +651,18 @@ function AdminDashboard({
                   <strong>{shop.name}</strong>
                   <span>{shop.category}</span>
                 </div>
-                <span className={`status ${shop.status}`}>{shop.status}</span>
+                <div className="shop-row-actions">
+                  <span className={`status ${shop.status}`}>{shop.status}</span>
+                  <button
+                    className="icon-button danger-button"
+                    type="button"
+                    title={`Delete ${shop.name}`}
+                    disabled={shop.status === "deleted" || deletingShopId === shop.id}
+                    onClick={() => handleDeleteShop(shop)}
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
