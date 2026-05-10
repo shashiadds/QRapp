@@ -54,6 +54,10 @@ function formatDateKey(dateKey: string) {
   return readableDate.format(new Date(year, month - 1, day));
 }
 
+function normalizeShopLookup(value?: string) {
+  return (value || "").replace(/\s+/g, "").toLowerCase();
+}
+
 const fallbackVisitorContext: VisitorContext = {
   ipAddress: "Unknown",
   location: "Unknown",
@@ -142,6 +146,9 @@ function App() {
   }, []);
 
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
+  const sessionShop = session?.shopId
+    ? shops.find((shop) => normalizeShopLookup(shop.id) === normalizeShopLookup(session.shopId))
+    : undefined;
 
   return (
     <main>
@@ -175,9 +182,9 @@ function App() {
             <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
               Logout
             </button>
-            {session.shopId && shops.some((shop) => shop.id === session.shopId) ? (
+            {sessionShop ? (
               <ShopDashboard
-                shop={shops.find((shop) => shop.id === session.shopId)!}
+                shop={sessionShop}
                 shops={shops}
                 transactions={transactions}
                 setSelectedShopId={setSelectedShopId}

@@ -134,24 +134,38 @@ function doPost(event) {
 }
 
 // Admin authentication logic
+function normalizeLookup(value) {
+  return String(value || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function findShopForLogin(value, shops) {
+  const target = normalizeLookup(value);
+  return shops.find((shop) => {
+    return normalizeLookup(shop.id) === target || normalizeLookup(shop.name) === target;
+  });
+}
+
 function readAdmins() {
-  const shopIds = readShops().map((shop) => shop.id);
+  const shops = readShops();
   return readObjects(SHEETS.admins).map((row) => ({
     username: String(row.username),
     password: String(row.password),
     role: String(row.role || "").trim(),
     shopId: String(row.shopId || "").trim(),
   })).map((admin) => {
-    if (admin.role === "shopAdmin" && !admin.shopId && shopIds.indexOf(admin.username) !== -1) {
-      return { ...admin, shopId: admin.username };
+    const shopFromShopId = findShopForLogin(admin.shopId, shops);
+    const shopFromUsername = findShopForLogin(admin.username, shops);
+
+    if (admin.role === "shopAdmin") {
+      return { ...admin, shopId: (shopFromShopId || shopFromUsername)?.id || admin.shopId };
     }
 
     if (admin.role) {
       return admin;
     }
 
-    if (shopIds.indexOf(admin.username) !== -1) {
-      return { ...admin, role: "shopAdmin", shopId: admin.shopId || admin.username };
+    if (shopFromShopId || shopFromUsername) {
+      return { ...admin, role: "shopAdmin", shopId: (shopFromShopId || shopFromUsername).id };
     }
 
     return { ...admin, role: "admin" };
