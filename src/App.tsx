@@ -43,6 +43,30 @@ const fallbackVisitorContext: VisitorContext = {
   longitude: null,
 };
 
+function downloadCSV(filename: string, rows: any[][]) {
+  const csvContent = rows
+    .map((e) =>
+      e
+        .map((cell) => {
+          if (typeof cell === "string") {
+            return `"${cell.replace(/"/g, '""')}"`;
+          }
+          return cell;
+        })
+        .join(",")
+    )
+    .join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 function App() {
   const params = new URLSearchParams(window.location.search);
   const initialShopId = params.get("shop") ?? seedShops[0].id;
@@ -569,7 +593,94 @@ function AdminDashboard({
         </section>
       </div>
 
+      <AdminReports transactions={transactions} shops={shops} />
+
       <TransactionTable transactions={transactions} />
+    </section>
+  );
+}
+
+function AdminReports({ transactions, shops }: { transactions: Transaction[], shops: Shop[] }) {
+  const summary = useMemo(() => {
+    const data: Record<string, { date: string; shopId: string; totalBills: number; totalCashbacks: number }> = {};
+    
+    transactions.forEach(tx => {
+      if (tx.status !== "approved") return;
+      
+      let date = "Unknown";
+      try {
+        if (tx.timestamp) {
+          date = new Date(tx.timestamp).toISOString().split('T')[0];
+        }
+      } catch (e) {
+        // Ignored
+      }
+
+      const key = `${date}|${tx.shopId}`;
+      if (!data[key]) {
+        data[key] = { date, shopId: tx.shopId, totalBills: 0, totalCashbacks: 0 };
+      }
+      data[key].totalBills += tx.billAmount;
+      data[key].totalCashbacks += tx.reward;
+    });
+
+    return Object.values(data).sort((a, b) => b.date.localeCompare(a.date));
+  }, [transactions]);
+
+  return (
+    <section className="surface table-surface" style={{ marginBottom: '1.5rem' }}>
+      <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <BarChart3 size={20} />
+          <h2>Daily Reporting (Pivot)</h2>
+        </div>
+        <button 
+          className="secondary-action" 
+          style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+          onClick={() => {
+            const headers = ["Date", "Shop Name", "Shop ID", "Total Bills", "Total Cashbacks"];
+            const rows = summary.map(row => {
+              const shop = shops.find(s => s.id === row.shopId);
+              return [row.date, shop ? shop.name : row.shopId, row.shopId, row.totalBills, row.totalCashbacks];
+            });
+            downloadCSV("daily_report.csv", [headers, ...rows]);
+          }}
+        >
+          <Download size={14} style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
+          Download CSV
+        </button>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Shop</th>
+              <th>Total Bills</th>
+              <th>Total Cashbacks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summary.map((row, idx) => {
+              const shop = shops.find(s => s.id === row.shopId);
+              const shopName = shop ? shop.name : row.shopId;
+              return (
+                <tr key={`${row.date}-${row.shopId}-${idx}`}>
+                  <td>{row.date}</td>
+                  <td>{shopName}</td>
+                  <td>{currency.format(row.totalBills)}</td>
+                  <td>{currency.format(row.totalCashbacks)}</td>
+                </tr>
+              )
+            })}
+            {summary.length === 0 && (
+              <tr>
+                <td colSpan={4} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions yet.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
@@ -609,9 +720,31 @@ function TransactionTable({
 
   return (
     <section className="surface table-surface">
-      <div className="section-title">
-        <Users size={20} />
-        <h2>Transactions</h2>
+      <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Users size={20} />
+          <h2>Transactions</h2>
+        </div>
+        <button 
+          className="secondary-action" 
+          style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+          onClick={() => {
+            const headers = ["Mobile", "Name", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp"];
+            const rows = transactions.map(tx => [
+              tx.mobile,
+              tx.customerName || "Walk-in",
+              tx.shopId,
+              tx.billAmount,
+              tx.reward,
+              tx.status,
+              tx.timestamp
+            ]);
+            downloadCSV("transactions.csv", [headers, ...rows]);
+          }}
+        >
+          <Download size={14} style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
+          Download CSV
+        </button>
       </div>
       <div className="table-wrap">
         <table>
