@@ -202,7 +202,7 @@ function CustomerFlow({
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
   const [billAmount, setBillAmount] = useState("");
-  const [phase, setPhase] = useState<"form" | "processing" | "reward">("form");
+  const [phase, setPhase] = useState<"form" | "processing" | "reward" | "thankYou">("form");
   const [message, setMessage] = useState("");
   const [reward, setReward] = useState<number | null>(null);
   const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
@@ -259,13 +259,6 @@ function CustomerFlow({
             <span>{shop.category}</span>
             <h1>{shop.name}</h1>
           </div>
-          <select value={shop.id} onChange={(event) => setSelectedShopId(event.target.value)}>
-            {shops.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
         </div>
 
         {phase === "form" && (
@@ -335,16 +328,19 @@ function CustomerFlow({
               className="secondary-action"
               type="button"
               onClick={() => {
-                setCustomerName("");
-                setAddress("");
-                setMobile("");
-                setBillAmount("");
-                setReward(null);
-                setPhase("form");
+                setPhase("thankYou");
               }}
             >
-              New Bill
+              Collect & Finish
             </button>
+          </div>
+        )}
+
+        {phase === "thankYou" && (
+          <div className="reward-reveal">
+            <Gift size={42} />
+            <h2>Thank You for Shopping!</h2>
+            <p>We appreciate your business at {shop.name}.</p>
           </div>
         )}
       </div>
