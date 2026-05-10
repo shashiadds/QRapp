@@ -253,6 +253,11 @@ function CustomerFlow({
     setMessage("");
 
     window.setTimeout(async () => {
+      const latestVisitorContext = await loadVisitorContext({ includeDeviceLocation: true }).catch(
+        () => visitorContext
+      );
+      setVisitorContext(latestVisitorContext);
+
       const result = isSheetsConfigured
         ? await submitSheetsReward(
             shop.id,
@@ -260,7 +265,7 @@ function CustomerFlow({
             address.trim(),
             mobile.trim(),
             Number(billAmount),
-            visitorContext
+            latestVisitorContext
           ).catch((error) => ({
             ok: false as const,
             reason: error instanceof Error ? error.message : "Could not save reward.",
@@ -272,7 +277,7 @@ function CustomerFlow({
             mobile.trim(),
             Number(billAmount),
             transactions,
-            visitorContext
+            latestVisitorContext
           );
 
       if (!result.ok) {
