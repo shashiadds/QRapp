@@ -517,8 +517,8 @@ function AdminDashboard({
       <MetricGrid
         metrics={[
           { label: "Platform scans", value: transactions.length.toString(), icon: ScanLine },
-          { label: "Total payout", value: currency.format(payout), icon: IndianRupee },
-          { label: "Profit", value: currency.format(revenue - payout), icon: BarChart3 },
+          { label: "Total discount given", value: currency.format(payout), icon: Gift },
+          { label: "Platform revenue", value: currency.format(revenue), icon: IndianRupee },
           { label: "Active shops", value: shops.filter((shop) => shop.status === "active").length.toString(), icon: Store },
         ]}
       />
