@@ -62,3 +62,9 @@ export function authLogin(password: string, username: string) {
     password,
   });
 }
+
+export function addSheetsShop(shop: Partial<Shop>) {
+  return request<{ ok: boolean; shop: Shop; credentials: { username: string; password: string } }>("addShop", {
+    shop,
+  });
+}

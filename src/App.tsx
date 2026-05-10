@@ -23,7 +23,7 @@ import {
   transactions as seedTransactions,
 } from "./data";
 import { submitReward } from "./rewardEngine";
-import { isSheetsConfigured, loadSheetsData, submitSheetsReward } from "./sheetsApi";
+import { isSheetsConfigured, loadSheetsData, submitSheetsReward, addSheetsShop } from "./sheetsApi";
 import type { FraudSignal, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 
@@ -128,6 +128,7 @@ function App() {
             </button>
             <AdminDashboard
               shops={shops}
+              setShops={setShops}
               transactions={transactions}
               fraudSignals={fraudSignals}
             />
@@ -423,19 +424,53 @@ function ShopDashboard({
 
 function AdminDashboard({
   shops,
+  setShops,
   transactions,
   fraudSignals,
 }: {
   shops: Shop[];
+  setShops: (shops: Shop[]) => void;
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
 }) {
+  const [isAddingShop, setIsAddingShop] = useState(false);
+  const [newShopName, setNewShopName] = useState("");
+  const [newShopCategory, setNewShopCategory] = useState("General");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
+
   const approved = transactions.filter((transaction) => transaction.status === "approved");
   const payout = approved.reduce((sum, item) => sum + item.reward, 0);
   const revenue = approved.reduce((sum, item) => {
     const shop = shops.find((candidate) => candidate.id === item.shopId);
     return sum + (shop?.costPerScan ?? 0);
   }, 0);
+
+  const handleAddShop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newShopName.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (isSheetsConfigured) {
+        const result = await addSheetsShop({ name: newShopName, category: newShopCategory });
+        if (result.ok) {
+          setShops([...shops, result.shop]);
+          setCreatedCredentials(result.credentials);
+          setNewShopName("");
+          setNewShopCategory("General");
+        } else {
+          alert("Failed to create shop.");
+        }
+      } else {
+        alert("Adding shops is only supported when connected to Google Sheets.");
+      }
+    } catch (err) {
+      alert("Error adding shop.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <section className="dashboard">
@@ -460,10 +495,46 @@ function AdminDashboard({
 
       <div className="two-column admin-grid">
         <section className="surface">
-          <div className="section-title">
-            <Store size={20} />
-            <h2>Shop management</h2>
+          <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <Store size={20} />
+              <h2>Shop management</h2>
+            </div>
+            <button 
+              className="secondary-action" 
+              style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+              onClick={() => { setIsAddingShop(!isAddingShop); setCreatedCredentials(null); }}
+            >
+              {isAddingShop ? "Cancel" : "Add Shop"}
+            </button>
           </div>
+
+          {isAddingShop && (
+            <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
+              <form onSubmit={handleAddShop}>
+                <label>
+                  Shop Name
+                  <input value={newShopName} onChange={(e) => setNewShopName(e.target.value)} required />
+                </label>
+                <label>
+                  Category
+                  <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
+                </label>
+                <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
+                  {isSubmitting ? "Creating..." : "Create Shop"}
+                </button>
+              </form>
+              {createdCredentials && (
+                <div style={{ marginTop: "1rem", padding: "1rem", background: "#e6ffe6", border: "1px solid #00cc00", borderRadius: "8px", color: "#006600" }}>
+                  <strong>Shop created successfully!</strong>
+                  <p>Give these credentials to the shop owner:</p>
+                  <code>Username: {createdCredentials.username}</code><br/>
+                  <code>Password: {createdCredentials.password}</code>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="shop-list">
             {shops.map((shop) => (
               <div className="shop-row" key={shop.id}>

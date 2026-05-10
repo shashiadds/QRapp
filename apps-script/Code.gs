@@ -122,6 +122,10 @@ function doPost(event) {
     return jsonResponse(adminLogin(body.username, body.password));
   }
 
+  if (body.action === "addShop") {
+    return jsonResponse(addShop(body.shop));
+  }
+
   return jsonResponse({ ok: false, reason: "Unknown action." });
 }
 
@@ -144,6 +148,38 @@ function adminLogin(username, password) {
     return { ok: true, isAdmin: found.role === "admin", role: found.role, shopId: found.shopId };
   }
   return { ok: false, reason: "Invalid username or password." };
+}
+
+function addShop(shopData) {
+  const shopId = String(shopData.name).replace(/\s+/g, "").toLowerCase() + Math.floor(100 + Math.random() * 900);
+  const defaultPassword = "pass" + Math.floor(1000 + Math.random() * 9000);
+  
+  const newShop = {
+    id: shopId,
+    name: String(shopData.name),
+    category: String(shopData.category || "General"),
+    status: "active",
+    maxReward: Number(shopData.maxReward || 100),
+    costPerScan: Number(shopData.costPerScan || 10),
+    rewardBands: JSON.stringify([
+      { reward: 5, probability: 50 },
+      { reward: 10, probability: 30 },
+      { reward: 50, probability: 15, minBill: 100 },
+      { reward: 100, probability: 5, minBill: 500 }
+    ])
+  };
+
+  appendObject(SHEETS.shops, HEADERS.shops, newShop);
+
+  const adminRow = {
+    username: shopId,
+    password: defaultPassword,
+    role: "shopAdmin",
+    shopId: shopId
+  };
+  appendObject(SHEETS.admins, HEADERS.admins, adminRow);
+
+  return { ok: true, shop: newShop, credentials: { username: shopId, password: defaultPassword } };
 }
 
 function submitReward(
@@ -344,12 +380,20 @@ function jsonResponse(data) {
 }
 
 function emailDailyReport() {
-  const emailAddress = "shashi.adsure@gmail.com";
+  const emailAddress = "shashi.adsure@gmail.com,exmudra@gmail.com";
   const subject = "Smart Mudra - Daily Report";
   const body = "Please find attached the daily report copy for Smart Mudra.";
   
   const spreadsheetId = "1WfgPOw_ulgFCvPWcBxfy92s2prx8WWbUv4EKC-D5QHA";
   const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+  
+  // Update the summary sheet before exporting
+  updateSummarySheet(spreadsheet);
+  SpreadsheetApp.flush(); // Ensure changes are saved before export
+  
+  // Wait a few seconds to ensure Google's export API sees the new sheet
+  Utilities.sleep(5000);
+  
   const url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=xlsx";
   
   const token = ScriptApp.getOAuthToken();
@@ -367,6 +411,70 @@ function emailDailyReport() {
     body: body,
     attachments: [blob]
   });
+}
+
+function updateSummarySheet(spreadsheet) {
+  const sheetName = "Summary";
+  let summarySheet = spreadsheet.getSheetByName(sheetName);
+  if (!summarySheet) {
+    summarySheet = spreadsheet.insertSheet(sheetName);
+  }
+  
+  summarySheet.clear();
+  
+  const transactionsSheet = spreadsheet.getSheetByName(SHEETS.transactions);
+  if (!transactionsSheet) return;
+  const values = transactionsSheet.getDataRange().getValues();
+  if (values.length <= 1) {
+    summarySheet.appendRow(["Date", "Shop ID", "Total Bills Amount", "Total Cashbacks"]);
+    return;
+  }
+  
+  const headers = values[0];
+  const shopIdIdx = headers.indexOf("shopId");
+  const billAmountIdx = headers.indexOf("billAmount");
+  const rewardIdx = headers.indexOf("reward");
+  const timestampIdx = headers.indexOf("timestamp");
+  const statusIdx = headers.indexOf("status");
+  
+  const summaryData = {};
+  
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    const status = String(row[statusIdx]);
+    if (status !== "approved") continue;
+    
+    const timestamp = row[timestampIdx];
+    const date = dateKey(timestamp);
+    const shopId = row[shopIdIdx];
+    const billAmount = Number(row[billAmountIdx]) || 0;
+    const reward = Number(row[rewardIdx]) || 0;
+    
+    const key = date + "|" + shopId;
+    if (!summaryData[key]) {
+      summaryData[key] = {
+        date: date,
+        shopId: shopId,
+        totalBills: 0,
+        totalCashbacks: 0
+      };
+    }
+    
+    summaryData[key].totalBills += billAmount;
+    summaryData[key].totalCashbacks += reward;
+  }
+  
+  const outputRows = [["Date", "Shop ID", "Total Bills Amount", "Total Cashbacks"]];
+  
+  const sortedKeys = Object.keys(summaryData).sort((a, b) => b.localeCompare(a));
+  
+  sortedKeys.forEach(key => {
+    const data = summaryData[key];
+    outputRows.push([data.date, data.shopId, data.totalBills, data.totalCashbacks]);
+  });
+  
+  summarySheet.getRange(1, 1, outputRows.length, 4).setValues(outputRows);
+  summarySheet.setFrozenRows(1);
 }
 
 function setupDailyReportTrigger() {
