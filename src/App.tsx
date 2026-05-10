@@ -349,15 +349,9 @@ function CustomerFlow({
             <span>You won</span>
             <strong>{currency.format(reward ?? 0)}</strong>
             <p>Show this screen at the counter to redeem your cashback.</p>
-            <button
-              className="secondary-action"
-              type="button"
-              onClick={() => {
-                setPhase("thankYou");
-              }}
-            >
-              Collect & Finish
-            </button>
+            <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151' }}>
+              Thank you for shopping! Visit again.
+            </p>
           </div>
         )}
 
