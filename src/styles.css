@@ -393,6 +393,63 @@ code {
   overflow-x: auto;
 }
 
+.filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(6, minmax(120px, 1fr)) auto;
+  margin-bottom: 16px;
+}
+
+.filter-bar label {
+  font-size: 12px;
+}
+
+.filter-bar .filter-search {
+  grid-column: span 2;
+}
+
+.filter-clear {
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.filter-summary {
+  background: #f4f6f8;
+  border: 1px solid #e1e7ed;
+  border-radius: 7px;
+  color: #4d5a6b;
+  font-size: 13px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+}
+
+.pagination-row {
+  align-items: center;
+  color: #667085;
+  display: flex;
+  font-size: 13px;
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 14px;
+}
+
+.pagination-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.pagination-actions .secondary-action {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.pagination-actions .secondary-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 table {
   border-collapse: collapse;
   min-width: 520px;
@@ -493,6 +550,18 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-bar .filter-search {
+    grid-column: 1 / -1;
+  }
+
+  .filter-clear {
+    grid-column: 1 / -1;
+  }
+
   .metric {
     min-height: 112px;
   }
@@ -530,5 +599,16 @@ th {
   .dashboard-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .filter-bar,
+  .pagination-row,
+  .pagination-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-bar {
+    display: flex;
   }
 }

@@ -36,6 +36,23 @@ const currency = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
+const readableDate = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+function getDateKey(timestamp: string) {
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+}
+
+function formatDateKey(dateKey: string) {
+  if (!dateKey || dateKey === "Unknown") return dateKey || "Any date";
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return readableDate.format(new Date(year, month - 1, day));
+}
+
 const fallbackVisitorContext: VisitorContext = {
   ipAddress: "Unknown",
   location: "Unknown",
@@ -606,12 +623,18 @@ function AdminDashboard({
 
       <AdminReports transactions={transactions} shops={shops} />
 
-      <TransactionTable transactions={transactions} />
+      <TransactionTable transactions={transactions} shops={shops} />
     </section>
   );
 }
 
 function AdminReports({ transactions, shops }: { transactions: Transaction[], shops: Shop[] }) {
+  const [shopFilter, setShopFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const summary = useMemo(() => {
     const data: Record<string, { date: string; shopId: string; totalBills: number; totalCashbacks: number }> = {};
     
@@ -619,12 +642,8 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
       if (tx.status !== "approved") return;
       
       let date = "Unknown";
-      try {
-        if (tx.timestamp) {
-          date = new Date(tx.timestamp).toISOString().split('T')[0];
-        }
-      } catch (e) {
-        // Ignored
+      if (tx.timestamp) {
+        date = getDateKey(tx.timestamp) || "Unknown";
       }
 
       const key = `${date}|${tx.shopId}`;
@@ -638,6 +657,31 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
     return Object.values(data).sort((a, b) => b.date.localeCompare(a.date));
   }, [transactions]);
 
+  const filteredSummary = useMemo(() => {
+    return summary.filter((row) => {
+      if (shopFilter !== "all" && row.shopId !== shopFilter) return false;
+      if (fromDate && row.date < fromDate) return false;
+      if (toDate && row.date > toDate) return false;
+      return true;
+    });
+  }, [fromDate, shopFilter, summary, toDate]);
+
+  const selectedShopName = shopFilter === "all"
+    ? "All shops"
+    : shops.find((shop) => shop.id === shopFilter)?.name || shopFilter;
+  const dateRangeLabel = `${fromDate ? formatDateKey(fromDate) : "Any start date"} to ${toDate ? formatDateKey(toDate) : "Any end date"}`;
+
+  const totalPages = Math.max(1, Math.ceil(filteredSummary.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleSummary = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSummary.slice(start, start + pageSize);
+  }, [currentPage, filteredSummary, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, pageSize, shopFilter, toDate]);
+
   return (
     <section className="surface table-surface" style={{ marginBottom: '1.5rem' }}>
       <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -650,7 +694,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
             const headers = ["Date", "Shop Name", "Shop ID", "Total Bills", "Total Cashbacks"];
-            const rows = summary.map(row => {
+            const rows = filteredSummary.map(row => {
               const shop = shops.find(s => s.id === row.shopId);
               return [row.date, shop ? shop.name : row.shopId, row.shopId, row.totalBills, row.totalCashbacks];
             });
@@ -660,6 +704,48 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
           <Download size={14} style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
           Download CSV
         </button>
+      </div>
+      <div className="filter-bar">
+        <label>
+          Shop
+          <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
+            <option value="all">All shops</option>
+            {shops.map((shop) => (
+              <option value={shop.id} key={shop.id}>{shop.name}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          From
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </label>
+        <label>
+          To
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </label>
+        <label>
+          Rows
+          <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+          </select>
+        </label>
+        <button
+          className="secondary-action filter-clear"
+          type="button"
+          onClick={() => {
+            setShopFilter("all");
+            setFromDate("");
+            setToDate("");
+          }}
+        >
+          Clear
+        </button>
+      </div>
+      <div className="filter-summary">
+        Showing {filteredSummary.length} daily rows for {selectedShopName} from {dateRangeLabel}
       </div>
       <div className="table-wrap">
         <table>
@@ -672,7 +758,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
             </tr>
           </thead>
           <tbody>
-            {summary.map((row, idx) => {
+            {visibleSummary.map((row, idx) => {
               const shop = shops.find(s => s.id === row.shopId);
               const shopName = shop ? shop.name : row.shopId;
               return (
@@ -684,14 +770,21 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
                 </tr>
               )
             })}
-            {summary.length === 0 && (
+            {filteredSummary.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions yet.</td>
+                <td colSpan={4} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions match these filters.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      <PaginationControls
+        count={filteredSummary.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </section>
   );
 }
@@ -719,15 +812,67 @@ function MetricGrid({
 
 function TransactionTable({
   transactions,
+  shops = [],
   compact = false,
 }: {
   transactions: Transaction[];
+  shops?: Shop[];
   compact?: boolean;
 }) {
-  const visibleTransactions = useMemo(() => transactions.slice(0, compact ? 6 : 10), [
-    transactions,
-    compact,
-  ]);
+  const [query, setQuery] = useState("");
+  const [shopFilter, setShopFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(compact ? 6 : 10);
+
+  const shopNameById = useMemo(() => {
+    return new Map(shops.map((shop) => [shop.id, shop.name]));
+  }, [shops]);
+
+  const filteredTransactions = useMemo(() => {
+    if (compact) return transactions.slice(0, 6);
+
+    const normalizedQuery = query.trim().toLowerCase();
+    return transactions.filter((transaction) => {
+      const date = transaction.timestamp ? getDateKey(transaction.timestamp) : "";
+      const shopName = shopNameById.get(transaction.shopId) || "";
+      const searchable = [
+        transaction.mobile,
+        transaction.customerName,
+        transaction.address,
+        transaction.shopId,
+        shopName,
+        transaction.location,
+      ].join(" ").toLowerCase();
+
+      if (normalizedQuery && !searchable.includes(normalizedQuery)) return false;
+      if (shopFilter !== "all" && transaction.shopId !== shopFilter) return false;
+      if (statusFilter !== "all" && transaction.status !== statusFilter) return false;
+      if (fromDate && date < fromDate) return false;
+      if (toDate && date > toDate) return false;
+      return true;
+    });
+  }, [compact, fromDate, query, shopFilter, shopNameById, statusFilter, toDate, transactions]);
+
+  const selectedShopName = shopFilter === "all"
+    ? "All shops"
+    : shopNameById.get(shopFilter) || shopFilter;
+  const selectedStatus = statusFilter === "all" ? "all statuses" : statusFilter;
+  const dateRangeLabel = `${fromDate ? formatDateKey(fromDate) : "Any start date"} to ${toDate ? formatDateKey(toDate) : "Any end date"}`;
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleTransactions = useMemo(() => {
+    if (compact) return filteredTransactions;
+    const start = (currentPage - 1) * pageSize;
+    return filteredTransactions.slice(start, start + pageSize);
+  }, [compact, currentPage, filteredTransactions, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, pageSize, query, shopFilter, statusFilter, toDate]);
 
   return (
     <section className="surface table-surface">
@@ -741,7 +886,7 @@ function TransactionTable({
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
             const headers = ["Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
-            const rows = transactions.map(tx => [
+            const rows = filteredTransactions.map(tx => [
               tx.mobile,
               tx.customerName || "Walk-in",
               tx.address || "",
@@ -762,6 +907,70 @@ function TransactionTable({
           Download CSV
         </button>
       </div>
+      {!compact && (
+        <div className="filter-bar">
+          <label className="filter-search">
+            Search
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Mobile, name, shop, location"
+            />
+          </label>
+          <label>
+            Shop
+            <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
+              <option value="all">All shops</option>
+              {shops.map((shop) => (
+                <option value={shop.id} key={shop.id}>{shop.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Status
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">All statuses</option>
+              <option value="approved">Approved</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </label>
+          <label>
+            From
+            <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+          </label>
+          <label>
+            To
+            <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </label>
+          <label>
+            Rows
+            <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </label>
+          <button
+            className="secondary-action filter-clear"
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setShopFilter("all");
+              setStatusFilter("all");
+              setFromDate("");
+              setToDate("");
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+      {!compact && (
+        <div className="filter-summary">
+          Showing {filteredTransactions.length} transactions for {selectedShopName}, {selectedStatus}, from {dateRangeLabel}
+        </div>
+      )}
       <div className="table-wrap">
         <table>
           <thead>
@@ -779,7 +988,7 @@ function TransactionTable({
               <tr key={transaction.id}>
                 <td>{transaction.mobile}</td>
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
-                {!compact && <td>{transaction.shopId}</td>}
+                {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
                 <td>{currency.format(transaction.billAmount)}</td>
                 <td>{currency.format(transaction.reward)}</td>
                 <td>
@@ -787,10 +996,68 @@ function TransactionTable({
                 </td>
               </tr>
             ))}
+            {visibleTransactions.length === 0 && (
+              <tr>
+                <td colSpan={compact ? 4 : 6} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+      {!compact && (
+        <PaginationControls
+          count={filteredTransactions.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      )}
     </section>
+  );
+}
+
+function PaginationControls({
+  count,
+  currentPage,
+  pageSize,
+  totalPages,
+  onPageChange,
+}: {
+  count: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const start = count === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const end = Math.min(count, currentPage * pageSize);
+
+  return (
+    <div className="pagination-row">
+      <span>
+        Showing {start}-{end} of {count}
+      </span>
+      <div className="pagination-actions">
+        <button
+          className="secondary-action"
+          type="button"
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          className="secondary-action"
+          type="button"
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </div>
   );
 }
 
