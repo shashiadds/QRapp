@@ -173,14 +173,61 @@ function readAdmins() {
 }
 
 function adminLogin(username, password) {
-  const admins = readAdmins();
-  const found = admins.find(
-    (admin) => admin.username === username && admin.password === password
-  );
+  const found = findAdminByCredentials(username, password);
   if (found) {
     return { ok: true, isAdmin: found.role === "admin", role: found.role, shopId: found.shopId };
   }
   return { ok: false, reason: "Invalid username or password." };
+}
+
+function findAdminByCredentials(username, password) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.admins);
+  ensureHeaders(SHEETS.admins, HEADERS.admins);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return null;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const usernameIndex = headers.indexOf("username");
+  const passwordIndex = headers.indexOf("password");
+  const roleIndex = headers.indexOf("role");
+  const shopIdIndex = headers.indexOf("shopId");
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (String(row[usernameIndex]) !== String(username) || String(row[passwordIndex]) !== String(password)) {
+      continue;
+    }
+
+    const role = String(row[roleIndex] || "").trim();
+    const shopId = String(row[shopIdIndex] || "").trim();
+    return normalizeAdminAccount(String(row[usernameIndex]), role, shopId);
+  }
+
+  return null;
+}
+
+function normalizeAdminAccount(username, role, shopId) {
+  const shops = readShops();
+  const shopFromShopId = findShopForLogin(shopId, shops);
+  const shopFromUsername = findShopForLogin(username, shops);
+
+  if (role === "shopAdmin") {
+    return { username: username, role: role, shopId: (shopFromShopId || shopFromUsername)?.id || shopId };
+  }
+
+  if (role) {
+    return { username: username, role: role, shopId: shopId };
+  }
+
+  if (shopFromShopId || shopFromUsername) {
+    return { username: username, role: "shopAdmin", shopId: (shopFromShopId || shopFromUsername).id };
+  }
+
+  return { username: username, role: "admin", shopId: shopId };
 }
 
 function addShop(shopData) {
@@ -273,14 +320,7 @@ function submitReward(
     return { ok: false, reason: "Bill amount must be at least Rs 10." };
   }
 
-  const alreadyRewardedToday = readTransactions().some((transaction) => {
-    return (
-      transaction.shopId === shop.id &&
-      transaction.mobile === String(mobile) &&
-      transaction.status === "approved" &&
-      dateKey(transaction.timestamp) === dateKey(new Date())
-    );
-  });
+  const alreadyRewardedToday = hasApprovedRewardToday(shop.id, String(mobile));
 
   if (alreadyRewardedToday) {
     recordFraudAttempt(String(mobile), shop.id);
@@ -421,6 +461,48 @@ function readTransactions() {
       timestamp: String(row.timestamp),
     }))
     .reverse();
+}
+
+function hasApprovedRewardToday(shopId, mobile) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.transactions);
+  ensureHeaders(SHEETS.transactions, HEADERS.transactions);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return false;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const mobileIndex = headers.indexOf("mobile");
+  const shopIdIndex = headers.indexOf("shopId");
+  const statusIndex = headers.indexOf("status");
+  const timestampIndex = headers.indexOf("timestamp");
+  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  const today = dateKey(new Date());
+
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    const row = rows[index];
+    const timestamp = row[timestampIndex];
+    if (!timestamp) {
+      continue;
+    }
+
+    const transactionDate = dateKey(timestamp);
+    if (transactionDate < today) {
+      break;
+    }
+
+    if (
+      transactionDate === today &&
+      String(row[shopIdIndex]) === String(shopId) &&
+      String(row[mobileIndex]) === String(mobile) &&
+      String(row[statusIndex]) === "approved"
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function readFraudSignals() {
