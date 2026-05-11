@@ -32,15 +32,15 @@ const SEED_SHOPS = [
     "Kale Medical",
     "Medical Store",
     "active",
-    500,
+    600,
     10,
     JSON.stringify([
-      { reward: 5, probability: 40 },
-      { reward: 10, probability: 25 },
-      { reward: 20, probability: 15 },
-      { reward: 50, probability: 10 },
-      { reward: 100, probability: 7, minBill: 100 },
-      { reward: 500, probability: 3, minBill: 250 },
+      { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+      { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
+      { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
+      { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },
+      { minBill: 3500, maxBill: 6000, minPercent: 5, maxPercent: 8 },
+      { minBill: 6000, maxBill: 10000, minPercent: 4, maxPercent: 6 },
     ]),
   ],
   [
@@ -311,7 +311,24 @@ function submitReward(
 }
 
 function calculateReward(shop, billAmount) {
-  const eligibleBands = shop.rewardBands.filter((band) => !band.minBill || billAmount >= band.minBill);
+  const percentRule = findPercentRewardRule(shop, billAmount);
+  if (percentRule) {
+    const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
+    return roundRewardAmount((billAmount * percent) / 100);
+  }
+
+  const eligibleBands = shop.rewardBands.filter((band) => {
+    return (
+      Number.isFinite(Number(band.reward)) &&
+      Number.isFinite(Number(band.probability)) &&
+      (!band.minBill || billAmount >= band.minBill)
+    );
+  });
+
+  if (!eligibleBands.length) {
+    return 10;
+  }
+
   const totalProbability = eligibleBands.reduce((sum, band) => sum + Number(band.probability), 0);
   const roll = Math.random() * totalProbability;
   let cursor = 0;
@@ -325,6 +342,53 @@ function calculateReward(shop, billAmount) {
   }
 
   return Math.min(Number(eligibleBands[0] && eligibleBands[0].reward) || 5, Number(shop.maxReward));
+}
+
+function getShopRewardRules(shop) {
+  const lookup = normalizeLookup(shop.id + " " + shop.name);
+
+  if (lookup.indexOf("rahulagency") !== -1) {
+    return [
+      { minBill: 0, maxBill: 1000, minPercent: 10, maxPercent: 15 },
+      { minBill: 1000, maxBill: 5000, minPercent: 10, maxPercent: 20 },
+      { minBill: 5000, maxBill: 10000, minPercent: 10, maxPercent: 15 },
+      { minBill: 10000, maxBill: 50000, minPercent: 2, maxPercent: 7 },
+    ];
+  }
+
+  return getDefaultRewardRules();
+}
+
+function getDefaultRewardRules() {
+  return [
+    { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+    { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
+    { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
+    { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },
+    { minBill: 3500, maxBill: 6000, minPercent: 5, maxPercent: 8 },
+    { minBill: 6000, maxBill: 10000, minPercent: 4, maxPercent: 6 },
+  ];
+}
+
+function findPercentRewardRule(shop, billAmount) {
+  return getShopRewardRules(shop).find((rule) => {
+    return (
+      Number.isFinite(Number(rule.minPercent)) &&
+      Number.isFinite(Number(rule.maxPercent)) &&
+      billAmount >= Number(rule.minBill || 0) &&
+      (!Number.isFinite(Number(rule.maxBill)) || billAmount <= Number(rule.maxBill))
+    );
+  });
+}
+
+function randomBetween(min, max) {
+  const minValue = Number(min);
+  const maxValue = Number(max);
+  return minValue + Math.random() * (maxValue - minValue);
+}
+
+function roundRewardAmount(amount) {
+  return Math.max(10, Math.floor(Number(amount) / 10) * 10);
 }
 
 function readShops() {

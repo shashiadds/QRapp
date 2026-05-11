@@ -1,9 +1,12 @@
 export type ShopStatus = "active" | "paused" | "deleted";
 
 export type RewardBand = {
-  reward: number;
-  probability: number;
+  reward?: number;
+  probability?: number;
   minBill?: number;
+  maxBill?: number;
+  minPercent?: number;
+  maxPercent?: number;
 };
 
 export type Shop = {
