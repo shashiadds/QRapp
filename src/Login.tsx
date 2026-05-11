@@ -20,10 +20,11 @@ export default function Login({ title, expectedRole, onLogin }: LoginProps) {
     try {
       const data = await authLogin(password, username);
       if (data.ok && data.role) {
-        if (expectedRole && data.role !== expectedRole) {
+        const role = data.role.trim();
+        if (expectedRole && role.toLowerCase() !== expectedRole.toLowerCase()) {
           setError(`You are not authorized to view this page.`);
         } else {
-          onLogin({ role: data.role, shopId: data.shopId });
+          onLogin({ role, shopId: data.shopId });
         }
       } else {
         setError((data as any).reason || "Login failed");

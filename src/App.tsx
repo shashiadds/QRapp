@@ -58,6 +58,10 @@ function normalizeShopLookup(value?: string) {
   return (value || "").replace(/\s+/g, "").toLowerCase();
 }
 
+function normalizeRole(value?: string) {
+  return (value || "").trim().toLowerCase();
+}
+
 const fallbackVisitorContext: VisitorContext = {
   ipAddress: "Unknown",
   location: "Unknown",
@@ -112,7 +116,10 @@ function App() {
     const saved = localStorage.getItem("smart-mudra-transactions");
     return saved ? JSON.parse(saved) : seedTransactions;
   });
-  const [session, setSession] = useState<Session>(null);
+  const [session, setSession] = useState<Session>(() => {
+    const saved = localStorage.getItem("smart-mudra-session");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [hasLoadedArchive, setHasLoadedArchive] = useState(false);
 
   useEffect(() => {
@@ -128,6 +135,15 @@ function App() {
     }
     localStorage.setItem("smart-mudra-shops", JSON.stringify(shops));
   }, [shops]);
+
+  useEffect(() => {
+    if (session) {
+      localStorage.setItem("smart-mudra-session", JSON.stringify(session));
+      return;
+    }
+
+    localStorage.removeItem("smart-mudra-session");
+  }, [session]);
 
   useEffect(() => {
     if (!isSheetsConfigured) {
@@ -166,6 +182,7 @@ function App() {
 
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
   const adminShop = selectedShop || shops.find((shop) => shop.status === "active") || shops[0];
+  const sessionRole = normalizeRole(session?.role);
   const sessionShop = session?.shopId
     ? shops.find((shop) => normalizeShopLookup(shop.id) === normalizeShopLookup(session.shopId))
     : undefined;
@@ -195,7 +212,7 @@ function App() {
         )
       )}
       {view === "shop" && (
-        session?.role === "admin" ? (
+        sessionRole === "admin" ? (
           <div>
             <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
               Logout
@@ -218,7 +235,7 @@ function App() {
               </section>
             )}
           </div>
-        ) : !session || session.role !== "shopAdmin" ? (
+        ) : !session || sessionRole !== "shopadmin" ? (
           <Login title="Shop Login" expectedRole="shopAdmin" onLogin={setSession} />
         ) : (
           <div>
@@ -250,7 +267,7 @@ function App() {
         )
       )}
       {view === "admin" && (
-        !session || session.role !== "admin" ? (
+        !session || sessionRole !== "admin" ? (
           <Login title="Admin Login" expectedRole="admin" onLogin={setSession} />
         ) : (
           <div>
