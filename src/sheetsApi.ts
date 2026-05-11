@@ -4,13 +4,20 @@ const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
 export const isSheetsConfigured = Boolean(scriptUrl);
 
-async function request<T>(action: string, payload?: Record<string, unknown>): Promise<T> {
+async function request<T>(
+  action: string,
+  payload?: Record<string, unknown>,
+  query?: Record<string, string>
+): Promise<T> {
   if (!scriptUrl) {
     throw new Error("Google Apps Script URL is not configured.");
   }
 
   const url = new URL(scriptUrl);
   url.searchParams.set("action", action);
+  Object.entries(query ?? {}).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
 
   const response = await fetch(url, {
     method: payload ? "POST" : "GET",
@@ -31,8 +38,12 @@ async function request<T>(action: string, payload?: Record<string, unknown>): Pr
   return result as T;
 }
 
-export function loadSheetsData() {
-  return request<AppData>("bootstrap");
+export function loadSheetsData(options: { includeArchive?: boolean } = {}) {
+  return request<AppData>(
+    "bootstrap",
+    undefined,
+    options.includeArchive ? { includeArchive: "true" } : undefined
+  );
 }
 
 export function submitSheetsReward(

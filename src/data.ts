@@ -9,7 +9,7 @@ export const shops: Shop[] = [
     maxReward: 600,
     costPerScan: 10,
     rewardBands: [
-      { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+      { minBill: 50, maxBill: 500, minPercent: 8, maxPercent: 15 },
       { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
       { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
       { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },

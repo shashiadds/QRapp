@@ -1,6 +1,7 @@
 const SHEETS = {
   shops: "shops",
   transactions: "transactions",
+  transactionArchive: "transactions_archive",
   fraud: "fraud",
   admins: "admins",
 };
@@ -8,6 +9,21 @@ const SHEETS = {
 const HEADERS = {
   shops: ["id", "name", "category", "status", "maxReward", "costPerScan", "rewardBands"],
   transactions: [
+    "id",
+    "mobile",
+    "shopId",
+    "billAmount",
+    "reward",
+    "status",
+    "timestamp",
+    "customerName",
+    "address",
+    "ipAddress",
+    "location",
+    "latitude",
+    "longitude",
+  ],
+  transactionArchive: [
     "id",
     "mobile",
     "shopId",
@@ -35,7 +51,7 @@ const SEED_SHOPS = [
     600,
     10,
     JSON.stringify([
-      { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+      { minBill: 50, maxBill: 500, minPercent: 8, maxPercent: 15 },
       { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
       { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
       { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },
@@ -89,9 +105,10 @@ function doGet(event) {
   const action = event.parameter.action || "bootstrap";
 
   if (action === "bootstrap") {
+    const includeArchive = event.parameter.includeArchive === "true" || event.parameter.includeArchive === "1";
     return jsonResponse({
       shops: readShops(),
-      transactions: readTransactions(),
+      transactions: readTransactions(includeArchive),
       fraudSignals: readFraudSignals(),
     });
   }
@@ -128,6 +145,10 @@ function doPost(event) {
 
   if (body.action === "deleteShop") {
     return jsonResponse(deleteShop(body.shopId));
+  }
+
+  if (body.action === "archiveOldTransactions") {
+    return jsonResponse(archiveOldTransactions());
   }
 
   return jsonResponse({ ok: false, reason: "Unknown action." });
@@ -401,7 +422,7 @@ function getShopRewardRules(shop) {
 
 function getDefaultRewardRules() {
   return [
-    { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+    { minBill: 50, maxBill: 500, minPercent: 8, maxPercent: 15 },
     { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
     { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
     { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },
@@ -443,8 +464,8 @@ function readShops() {
   }));
 }
 
-function readTransactions() {
-  return readObjects(SHEETS.transactions)
+function readTransactions(includeArchive) {
+  return readTransactionObjects(includeArchive)
     .map((row) => ({
       id: String(row.id),
       customerName: String(row.customerName || ""),
@@ -461,6 +482,15 @@ function readTransactions() {
       timestamp: String(row.timestamp),
     }))
     .reverse();
+}
+
+function readTransactionObjects(includeArchive) {
+  const currentTransactions = readObjects(SHEETS.transactions);
+  if (!includeArchive) {
+    return currentTransactions;
+  }
+
+  return readObjects(SHEETS.transactionArchive).concat(currentTransactions);
 }
 
 function hasApprovedRewardToday(shopId, mobile) {
@@ -531,8 +561,88 @@ function recordFraudAttempt(mobile, shopId) {
   sheet.appendRow([mobile, shopId, 1, "watch", new Date().toISOString()]);
 }
 
+function archiveOldTransactions() {
+  const spreadsheet = SpreadsheetApp.getActive();
+  const transactionsSheet = spreadsheet.getSheetByName(SHEETS.transactions);
+  let archiveSheet = spreadsheet.getSheetByName(SHEETS.transactionArchive);
+
+  if (!transactionsSheet) {
+    return { ok: false, reason: "Transactions sheet not found." };
+  }
+
+  if (!archiveSheet) {
+    archiveSheet = spreadsheet.insertSheet(SHEETS.transactionArchive);
+    archiveSheet.getRange(1, 1, 1, HEADERS.transactionArchive.length).setValues([HEADERS.transactionArchive]);
+    archiveSheet.setFrozenRows(1);
+  } else {
+    ensureHeaders(SHEETS.transactionArchive, HEADERS.transactionArchive);
+  }
+
+  ensureHeaders(SHEETS.transactions, HEADERS.transactions);
+
+  const lastRow = transactionsSheet.getLastRow();
+  if (lastRow < 2) {
+    return { ok: true, archivedRows: 0 };
+  }
+
+  const headers = transactionsSheet.getRange(1, 1, 1, transactionsSheet.getLastColumn()).getValues()[0];
+  const timestampIndex = headers.indexOf("timestamp");
+  const values = transactionsSheet.getRange(2, 1, lastRow - 1, transactionsSheet.getLastColumn()).getValues();
+  const today = dateKey(new Date());
+  const rowsToArchive = [];
+  const rowNumbersToDelete = [];
+
+  values.forEach((row, index) => {
+    const timestamp = row[timestampIndex];
+    if (timestamp && dateKey(timestamp) < today) {
+      rowsToArchive.push(HEADERS.transactionArchive.map((header) => row[headers.indexOf(header)]));
+      rowNumbersToDelete.push(index + 2);
+    }
+  });
+
+  if (!rowsToArchive.length) {
+    return { ok: true, archivedRows: 0 };
+  }
+
+  archiveSheet
+    .getRange(archiveSheet.getLastRow() + 1, 1, rowsToArchive.length, HEADERS.transactionArchive.length)
+    .setValues(rowsToArchive);
+
+  deleteRowsByNumber(transactionsSheet, rowNumbersToDelete);
+
+  return { ok: true, archivedRows: rowsToArchive.length };
+}
+
+function deleteRowsByNumber(sheet, rowNumbers) {
+  if (!rowNumbers.length) {
+    return;
+  }
+
+  const sortedRows = rowNumbers.slice().sort((a, b) => b - a);
+  let rangeEnd = sortedRows[0];
+  let rangeStart = sortedRows[0];
+
+  for (let index = 1; index < sortedRows.length; index += 1) {
+    const rowNumber = sortedRows[index];
+    if (rowNumber === rangeStart - 1) {
+      rangeStart = rowNumber;
+      continue;
+    }
+
+    sheet.deleteRows(rangeStart, rangeEnd - rangeStart + 1);
+    rangeStart = rowNumber;
+    rangeEnd = rowNumber;
+  }
+
+  sheet.deleteRows(rangeStart, rangeEnd - rangeStart + 1);
+}
+
 function readObjects(sheetName) {
   const sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  if (!sheet) {
+    return [];
+  }
+
   const values = sheet.getDataRange().getValues();
   const headers = values.shift();
 
@@ -622,15 +732,13 @@ function updateSummarySheet(spreadsheet) {
   
   summarySheet.clear();
   
-  const transactionsSheet = spreadsheet.getSheetByName(SHEETS.transactions);
-  if (!transactionsSheet) return;
-  const values = transactionsSheet.getDataRange().getValues();
-  if (values.length <= 1) {
+  const transactionRows = readTransactionRowsForSpreadsheet(spreadsheet);
+  if (!transactionRows.rows.length) {
     summarySheet.appendRow(["Date", "Shop ID", "Total Bills Amount", "Total Cashbacks"]);
     return;
   }
   
-  const headers = values[0];
+  const headers = transactionRows.headers;
   const shopIdIdx = headers.indexOf("shopId");
   const billAmountIdx = headers.indexOf("billAmount");
   const rewardIdx = headers.indexOf("reward");
@@ -639,8 +747,8 @@ function updateSummarySheet(spreadsheet) {
   
   const summaryData = {};
   
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
+  for (let i = 0; i < transactionRows.rows.length; i++) {
+    const row = transactionRows.rows[i];
     const status = String(row[statusIdx]);
     if (status !== "approved") continue;
     
@@ -677,11 +785,35 @@ function updateSummarySheet(spreadsheet) {
   summarySheet.setFrozenRows(1);
 }
 
+function readTransactionRowsForSpreadsheet(spreadsheet) {
+  const headers = HEADERS.transactions;
+  const rows = [];
+
+  [SHEETS.transactionArchive, SHEETS.transactions].forEach((sheetName) => {
+    const sheet = spreadsheet.getSheetByName(sheetName);
+    if (!sheet || sheet.getLastRow() < 2) {
+      return;
+    }
+
+    const sheetHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const sheetRows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+
+    sheetRows.forEach((row) => {
+      rows.push(headers.map((header) => row[sheetHeaders.indexOf(header)]));
+    });
+  });
+
+  return { headers: headers, rows: rows };
+}
+
 function setupDailyReportTrigger() {
   // Clear existing triggers to avoid duplicates
   const triggers = ScriptApp.getProjectTriggers();
   triggers.forEach(trigger => {
-    if (trigger.getHandlerFunction() === 'emailDailyReport') {
+    if (
+      trigger.getHandlerFunction() === 'emailDailyReport' ||
+      trigger.getHandlerFunction() === 'archiveOldTransactions'
+    ) {
       ScriptApp.deleteTrigger(trigger);
     }
   });
@@ -691,5 +823,12 @@ function setupDailyReportTrigger() {
     .timeBased()
     .everyDays(1)
     .atHour(23)
+    .create();
+
+  // Move yesterday and older transactions after midnight so reward checks stay fast.
+  ScriptApp.newTrigger('archiveOldTransactions')
+    .timeBased()
+    .everyDays(1)
+    .atHour(1)
     .create();
 }

@@ -113,6 +113,7 @@ function App() {
     return saved ? JSON.parse(saved) : seedTransactions;
   });
   const [session, setSession] = useState<Session>(null);
+  const [hasLoadedArchive, setHasLoadedArchive] = useState(false);
 
   useEffect(() => {
     if (isSheetsConfigured) {
@@ -133,7 +134,7 @@ function App() {
       return;
     }
 
-    loadSheetsData()
+    loadSheetsData({ includeArchive: false })
       .then((data) => {
         setShops(data.shops.length ? data.shops : seedShops);
         setTransactions(data.transactions);
@@ -144,6 +145,24 @@ function App() {
         setDataStatus(error instanceof Error ? error.message : "Google Sheets connection failed");
       });
   }, []);
+
+  useEffect(() => {
+    if (!isSheetsConfigured || !session || hasLoadedArchive) {
+      return;
+    }
+
+    loadSheetsData({ includeArchive: true })
+      .then((data) => {
+        setShops(data.shops.length ? data.shops : seedShops);
+        setTransactions(data.transactions);
+        setFraudSignals(data.fraudSignals);
+        setDataStatus("Google Sheets connected");
+        setHasLoadedArchive(true);
+      })
+      .catch((error) => {
+        setDataStatus(error instanceof Error ? error.message : "Google Sheets connection failed");
+      });
+  }, [hasLoadedArchive, session]);
 
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
   const sessionShop = session?.shopId
