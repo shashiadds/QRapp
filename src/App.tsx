@@ -236,7 +236,7 @@ function App() {
             )}
           </div>
         ) : !session || sessionRole !== "shopadmin" ? (
-          <Login title="Shop Login" expectedRole="shopAdmin" onLogin={setSession} />
+          <Login title="Shop Login" allowedRoles={["shopAdmin", "admin"]} onLogin={setSession} />
         ) : (
           <div>
             <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>

@@ -4,10 +4,11 @@ import { authLogin } from "./sheetsApi";
 interface LoginProps {
   title: string;
   expectedRole?: string;
+  allowedRoles?: string[];
   onLogin: (session: { role: string; shopId?: string }) => void;
 }
 
-export default function Login({ title, expectedRole, onLogin }: LoginProps) {
+export default function Login({ title, expectedRole, allowedRoles, onLogin }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,7 +22,12 @@ export default function Login({ title, expectedRole, onLogin }: LoginProps) {
       const data = await authLogin(password, username);
       if (data.ok && data.role) {
         const role = data.role.trim();
-        if (expectedRole && role.toLowerCase() !== expectedRole.toLowerCase()) {
+        const acceptedRoles = allowedRoles || (expectedRole ? [expectedRole] : []);
+        const isAllowed =
+          !acceptedRoles.length ||
+          acceptedRoles.some((acceptedRole) => role.toLowerCase() === acceptedRole.toLowerCase());
+
+        if (!isAllowed) {
           setError(`You are not authorized to view this page.`);
         } else {
           onLogin({ role, shopId: data.shopId });
