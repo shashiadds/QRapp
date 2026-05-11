@@ -165,6 +165,7 @@ function App() {
   }, [hasLoadedArchive, session]);
 
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
+  const adminShop = selectedShop || shops.find((shop) => shop.status === "active") || shops[0];
   const sessionShop = session?.shopId
     ? shops.find((shop) => normalizeShopLookup(shop.id) === normalizeShopLookup(session.shopId))
     : undefined;
@@ -194,7 +195,30 @@ function App() {
         )
       )}
       {view === "shop" && (
-        !session || session.role !== "shopAdmin" ? (
+        session?.role === "admin" ? (
+          <div>
+            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
+              Logout
+            </button>
+            {adminShop ? (
+              <ShopDashboard
+                shop={adminShop}
+                shops={shops}
+                transactions={transactions}
+                setSelectedShopId={setSelectedShopId}
+              />
+            ) : (
+              <section className="dashboard">
+                <div className="surface">
+                  <div className="section-title">
+                    <Store size={20} />
+                    <h2>No shops available</h2>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+        ) : !session || session.role !== "shopAdmin" ? (
           <Login title="Shop Login" expectedRole="shopAdmin" onLogin={setSession} />
         ) : (
           <div>
