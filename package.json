@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run src/rewardEngine.test.ts",
+    "test:reward-rules": "node scripts/reward-rules.test.cjs"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.5",
@@ -20,6 +22,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "vitest": "^4.1.6"
   }
 }

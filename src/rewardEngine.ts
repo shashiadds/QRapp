@@ -1,5 +1,8 @@
 import type { RewardResult, Shop, Transaction, VisitorContext } from "./types";
 
+const MIN_CASHBACK = 10;
+const MAX_CASHBACK = 1000;
+
 const todayKey = (value: string | Date) => {
   const date = typeof value === "string" ? new Date(value) : value;
   return date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -11,7 +14,7 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return roundRewardAmount((billAmount * percent) / 100);
+    return clampCashback(roundRewardAmount((billAmount * percent) / 100), shop);
   }
 
   const eligibleBands = shop.rewardBands.filter(
@@ -32,11 +35,11 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   for (const band of eligibleBands) {
     cursor += band.probability ?? 0;
     if (roll <= cursor) {
-      return Math.min(band.reward ?? 5, shop.maxReward);
+      return clampCashback(band.reward ?? MIN_CASHBACK, shop);
     }
   }
 
-  return Math.min(eligibleBands[0]?.reward ?? 5, shop.maxReward);
+  return clampCashback(eligibleBands[0]?.reward ?? MIN_CASHBACK, shop);
 }
 
 function getShopRewardRules(shop: Shop) {
@@ -80,7 +83,12 @@ function randomBetween(min = 0, max = 0) {
 }
 
 function roundRewardAmount(amount: number) {
-  return Math.max(10, Math.floor(amount / 10) * 10);
+  return Math.max(MIN_CASHBACK, Math.floor(amount / 10) * 10);
+}
+
+function clampCashback(amount: number, shop: Shop) {
+  const shopLimit = Number.isFinite(shop.maxReward) ? shop.maxReward : MAX_CASHBACK;
+  return Math.max(MIN_CASHBACK, Math.min(amount, shopLimit, MAX_CASHBACK));
 }
 
 function normalizeLookup(value: string) {

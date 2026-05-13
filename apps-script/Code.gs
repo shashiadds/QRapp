@@ -6,6 +6,9 @@ const SHEETS = {
   admins: "admins",
 };
 
+const MIN_CASHBACK = 10;
+const MAX_CASHBACK = 1000;
+
 const HEADERS = {
   shops: ["id", "name", "category", "status", "maxReward", "costPerScan", "rewardBands"],
   transactions: [
@@ -67,8 +70,7 @@ const SEED_SHOPS = [
     100,
     8,
     JSON.stringify([
-      { reward: 5, probability: 50 },
-      { reward: 10, probability: 25 },
+      { reward: 10, probability: 75 },
       { reward: 20, probability: 15 },
       { reward: 50, probability: 8, minBill: 100 },
       { reward: 100, probability: 2, minBill: 200 },
@@ -263,8 +265,7 @@ function addShop(shopData) {
     maxReward: Number(shopData.maxReward || 100),
     costPerScan: Number(shopData.costPerScan || 10),
     rewardBands: JSON.stringify([
-      { reward: 5, probability: 50 },
-      { reward: 10, probability: 30 },
+      { reward: 10, probability: 80 },
       { reward: 50, probability: 15, minBill: 100 },
       { reward: 100, probability: 5, minBill: 500 }
     ])
@@ -375,7 +376,7 @@ function calculateReward(shop, billAmount) {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return roundRewardAmount((billAmount * percent) / 100);
+    return clampCashback(roundRewardAmount((billAmount * percent) / 100), shop);
   }
 
   const eligibleBands = shop.rewardBands.filter((band) => {
@@ -398,11 +399,11 @@ function calculateReward(shop, billAmount) {
     const band = eligibleBands[index];
     cursor += Number(band.probability);
     if (roll <= cursor) {
-      return Math.min(Number(band.reward), Number(shop.maxReward));
+      return clampCashback(Number(band.reward), shop);
     }
   }
 
-  return Math.min(Number(eligibleBands[0] && eligibleBands[0].reward) || 5, Number(shop.maxReward));
+  return clampCashback(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_CASHBACK, shop);
 }
 
 function getShopRewardRules(shop) {
@@ -449,7 +450,12 @@ function randomBetween(min, max) {
 }
 
 function roundRewardAmount(amount) {
-  return Math.max(10, Math.floor(Number(amount) / 10) * 10);
+  return Math.max(MIN_CASHBACK, Math.floor(Number(amount) / 10) * 10);
+}
+
+function clampCashback(amount, shop) {
+  const shopLimit = Number.isFinite(Number(shop.maxReward)) ? Number(shop.maxReward) : MAX_CASHBACK;
+  return Math.max(MIN_CASHBACK, Math.min(Number(amount), shopLimit, MAX_CASHBACK));
 }
 
 function readShops() {
