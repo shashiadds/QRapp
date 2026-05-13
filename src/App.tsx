@@ -54,6 +54,11 @@ function formatDateKey(dateKey: string) {
   return readableDate.format(new Date(year, month - 1, day));
 }
 
+function formatTransactionDate(timestamp?: string) {
+  const dateKey = timestamp ? getDateKey(timestamp) : "";
+  return dateKey ? formatDateKey(dateKey) : "Unknown";
+}
+
 function normalizeShopLookup(value?: string) {
   return (value || "").replace(/\s+/g, "").toLowerCase();
 }
@@ -1029,8 +1034,9 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
+              formatTransactionDate(tx.timestamp),
               tx.mobile,
               tx.customerName || "Walk-in",
               tx.address || "",
@@ -1119,6 +1125,7 @@ function TransactionTable({
         <table>
           <thead>
             <tr>
+              <th>Date</th>
               <th>Mobile</th>
               {!compact && <th>Name</th>}
               {!compact && <th>Shop</th>}
@@ -1130,6 +1137,7 @@ function TransactionTable({
           <tbody>
             {visibleTransactions.map((transaction) => (
               <tr key={transaction.id}>
+                <td>{formatTransactionDate(transaction.timestamp)}</td>
                 <td>{transaction.mobile}</td>
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
@@ -1142,7 +1150,7 @@ function TransactionTable({
             ))}
             {visibleTransactions.length === 0 && (
               <tr>
-                <td colSpan={compact ? 4 : 6} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
+                <td colSpan={compact ? 5 : 7} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
               </tr>
             )}
           </tbody>
