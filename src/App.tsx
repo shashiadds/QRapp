@@ -798,7 +798,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
   const [pageSize, setPageSize] = useState(10);
 
   const summary = useMemo(() => {
-    const data: Record<string, { date: string; shopId: string; totalBills: number; totalCashbacks: number }> = {};
+    const data: Record<string, { date: string; shopId: string; billCount: number; totalBills: number; totalCashbacks: number }> = {};
     
     transactions.forEach(tx => {
       if (tx.status !== "approved") return;
@@ -810,8 +810,9 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
 
       const key = `${date}|${tx.shopId}`;
       if (!data[key]) {
-        data[key] = { date, shopId: tx.shopId, totalBills: 0, totalCashbacks: 0 };
+        data[key] = { date, shopId: tx.shopId, billCount: 0, totalBills: 0, totalCashbacks: 0 };
       }
+      data[key].billCount += 1;
       data[key].totalBills += tx.billAmount;
       data[key].totalCashbacks += tx.reward;
     });
@@ -855,10 +856,10 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Shop Name", "Shop ID", "Total Bills", "Total Cashbacks"];
+            const headers = ["Date", "Shop Name", "Shop ID", "Bill Count", "Total Bills", "Total Cashbacks"];
             const rows = filteredSummary.map(row => {
               const shop = shops.find(s => s.id === row.shopId);
-              return [row.date, shop ? shop.name : row.shopId, row.shopId, row.totalBills, row.totalCashbacks];
+              return [row.date, shop ? shop.name : row.shopId, row.shopId, row.billCount, row.totalBills, row.totalCashbacks];
             });
             downloadCSV("daily_report.csv", [headers, ...rows]);
           }}
@@ -915,6 +916,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
             <tr>
               <th>Date</th>
               <th>Shop</th>
+              <th>Bill Count</th>
               <th>Total Bills</th>
               <th>Total Cashbacks</th>
             </tr>
@@ -927,6 +929,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
                 <tr key={`${row.date}-${row.shopId}-${idx}`}>
                   <td>{row.date}</td>
                   <td>{shopName}</td>
+                  <td>{row.billCount}</td>
                   <td>{currency.format(row.totalBills)}</td>
                   <td>{currency.format(row.totalCashbacks)}</td>
                 </tr>
@@ -934,7 +937,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
             })}
             {filteredSummary.length === 0 && (
               <tr>
-                <td colSpan={4} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions match these filters.</td>
+                <td colSpan={5} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions match these filters.</td>
               </tr>
             )}
           </tbody>
