@@ -3,11 +3,6 @@ import type { RewardResult, Shop, Transaction, VisitorContext } from "./types";
 const MIN_CASHBACK = 10;
 const MAX_CASHBACK = 1000;
 
-const todayKey = (value: string | Date) => {
-  const date = typeof value === "string" ? new Date(value) : value;
-  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-};
-
 const makeId = () => `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
 
 export function calculateReward(shop: Shop, billAmount: number): number {
@@ -122,21 +117,6 @@ export function submitReward(
 
   if (!Number.isFinite(billAmount) || billAmount < 10) {
     return { ok: false, reason: "Bill amount must be at least ₹10." };
-  }
-
-  const alreadyRewardedToday = existingTransactions.some(
-    (transaction) =>
-      transaction.shopId === shop.id &&
-      transaction.mobile === mobile &&
-      transaction.status === "approved" &&
-      todayKey(transaction.timestamp) === todayKey(new Date())
-  );
-
-  if (alreadyRewardedToday) {
-    return {
-      ok: false,
-      reason: "This mobile number has already received today's reward at this shop.",
-    };
   }
 
   const reward = calculateReward(shop, billAmount);

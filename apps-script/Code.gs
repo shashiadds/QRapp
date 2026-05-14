@@ -342,16 +342,6 @@ function submitReward(
     return { ok: false, reason: "Bill amount must be at least Rs 10." };
   }
 
-  const alreadyRewardedToday = hasApprovedRewardToday(shop.id, String(mobile));
-
-  if (alreadyRewardedToday) {
-    recordFraudAttempt(String(mobile), shop.id);
-    return {
-      ok: false,
-      reason: "This mobile number has already received today's reward at this shop.",
-    };
-  }
-
   const transaction = {
     id: makeTransactionId(),
     customerName: String(customerName).trim(),
@@ -499,48 +489,6 @@ function readTransactionObjects(includeArchive) {
   return readObjects(SHEETS.transactionArchive).concat(currentTransactions);
 }
 
-function hasApprovedRewardToday(shopId, mobile) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.transactions);
-  ensureHeaders(SHEETS.transactions, HEADERS.transactions);
-
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    return false;
-  }
-
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const mobileIndex = headers.indexOf("mobile");
-  const shopIdIndex = headers.indexOf("shopId");
-  const statusIndex = headers.indexOf("status");
-  const timestampIndex = headers.indexOf("timestamp");
-  const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-  const today = dateKey(new Date());
-
-  for (let index = rows.length - 1; index >= 0; index -= 1) {
-    const row = rows[index];
-    const timestamp = row[timestampIndex];
-    if (!timestamp) {
-      continue;
-    }
-
-    const transactionDate = dateKey(timestamp);
-    if (transactionDate < today) {
-      break;
-    }
-
-    if (
-      transactionDate === today &&
-      String(row[shopIdIndex]) === String(shopId) &&
-      String(row[mobileIndex]) === String(mobile) &&
-      String(row[statusIndex]) === "approved"
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 function readFraudSignals() {
   return readObjects(SHEETS.fraud).map((row) => ({
     mobile: String(row.mobile),
@@ -548,23 +496,6 @@ function readFraudSignals() {
     attempts: Number(row.attempts),
     status: String(row.status),
   }));
-}
-
-function recordFraudAttempt(mobile, shopId) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.fraud);
-  const rows = sheet.getDataRange().getValues();
-
-  for (let index = 1; index < rows.length; index += 1) {
-    if (String(rows[index][0]) === mobile && String(rows[index][1]) === shopId) {
-      const attempts = Number(rows[index][2]) + 1;
-      sheet.getRange(index + 1, 3, 1, 3).setValues([
-        [attempts, attempts >= 5 ? "blocked" : "watch", new Date().toISOString()],
-      ]);
-      return;
-    }
-  }
-
-  sheet.appendRow([mobile, shopId, 1, "watch", new Date().toISOString()]);
 }
 
 function archiveOldTransactions() {

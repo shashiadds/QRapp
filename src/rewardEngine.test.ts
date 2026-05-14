@@ -251,7 +251,9 @@ describe("submitReward", () => {
     ).toEqual({ ok: false, reason: "Bill amount must be at least ₹10." });
   });
 
-  it("blocks the same mobile from receiving another approved reward at the same shop today", () => {
+  it("allows the same mobile to receive multiple rewards at the same shop today", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
     const result = submitReward(
       baseShop,
       "Neha Patil",
@@ -262,13 +264,10 @@ describe("submitReward", () => {
       visitorContext
     );
 
-    expect(result).toEqual({
-      ok: false,
-      reason: "This mobile number has already received today's reward at this shop.",
-    });
+    expect(result.ok).toBe(true);
   });
 
-  it("allows the same mobile when the previous transaction is for another shop, blocked, or older", () => {
+  it("does not need to inspect older or unrelated transactions before approving", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
 
     const olderDate = new Date();
