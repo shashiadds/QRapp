@@ -43,6 +43,13 @@ const readableDate = new Intl.DateTimeFormat("en-IN", {
   year: "numeric",
 });
 
+const readableTime = new Intl.DateTimeFormat("en-IN", {
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+  timeZone: "Asia/Kolkata",
+});
+
 function getDateKey(timestamp: string) {
   const date = new Date(timestamp);
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
@@ -57,6 +64,12 @@ function formatDateKey(dateKey: string) {
 function formatTransactionDate(timestamp?: string) {
   const dateKey = timestamp ? getDateKey(timestamp) : "";
   return dateKey ? formatDateKey(dateKey) : "Unknown";
+}
+
+function formatTransactionTime(timestamp?: string) {
+  if (!timestamp) return "Unknown";
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? "Unknown" : readableTime.format(date);
 }
 
 function normalizeShopLookup(value?: string) {
@@ -1034,9 +1047,10 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
               formatTransactionDate(tx.timestamp),
+              formatTransactionTime(tx.timestamp),
               tx.mobile,
               tx.customerName || "Walk-in",
               tx.address || "",
@@ -1126,6 +1140,7 @@ function TransactionTable({
           <thead>
             <tr>
               <th>Date</th>
+              <th>Time</th>
               <th>Mobile</th>
               {!compact && <th>Name</th>}
               {!compact && <th>Shop</th>}
@@ -1138,6 +1153,7 @@ function TransactionTable({
             {visibleTransactions.map((transaction) => (
               <tr key={transaction.id}>
                 <td>{formatTransactionDate(transaction.timestamp)}</td>
+                <td>{formatTransactionTime(transaction.timestamp)}</td>
                 <td>{transaction.mobile}</td>
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
@@ -1150,7 +1166,7 @@ function TransactionTable({
             ))}
             {visibleTransactions.length === 0 && (
               <tr>
-                <td colSpan={compact ? 5 : 7} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
+                <td colSpan={compact ? 6 : 8} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
               </tr>
             )}
           </tbody>
