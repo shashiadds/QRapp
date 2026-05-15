@@ -219,25 +219,6 @@ label {
   gap: 7px;
 }
 
-.consent-row {
-  align-items: flex-start;
-  background: #f7faf9;
-  border: 1px solid #d7e4df;
-  border-radius: 7px;
-  display: flex;
-  font-size: 13px;
-  font-weight: 600;
-  gap: 10px;
-  line-height: 1.45;
-  padding: 12px;
-}
-
-.consent-row input {
-  flex: 0 0 auto;
-  margin-top: 2px;
-  min-height: auto;
-}
-
 .error {
   background: #fff1f1;
   border: 1px solid #ffc9c9;

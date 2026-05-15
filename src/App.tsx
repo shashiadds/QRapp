@@ -388,7 +388,6 @@ function CustomerFlow({
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
   const [billAmount, setBillAmount] = useState("");
-  const [consentAccepted, setConsentAccepted] = useState(false);
   const [phase, setPhase] = useState<"form" | "processing" | "reward" | "thankYou">("form");
   const [message, setMessage] = useState("");
   const [reward, setReward] = useState<number | null>(null);
@@ -399,11 +398,6 @@ function CustomerFlow({
   }, []);
 
   const handleSubmit = () => {
-    if (!consentAccepted) {
-      setMessage("Please agree to share your information before continuing.");
-      return;
-    }
-
     setPhase("processing");
     setMessage("");
 
@@ -507,17 +501,6 @@ function CustomerFlow({
                 value={billAmount}
                 onChange={(event) => setBillAmount(event.target.value)}
               />
-            </label>
-            <label className="consent-row">
-              <input
-                checked={consentAccepted}
-                onChange={(event) => setConsentAccepted(event.target.checked)}
-                type="checkbox"
-              />
-              <span>
-                I agree to share my name, address, mobile number, purchase details, and approximate location with
-                Smart Mudra and this shop for points and record keeping.
-              </span>
             </label>
             {message && <p className="error">{message}</p>}
             <button className="primary-action" type="button" onClick={handleSubmit}>
