@@ -567,7 +567,7 @@ function calculateReward(shop, billAmount) {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return clampPoints(roundRewardAmount((billAmount * percent) / 100), shop);
+    return finalizePoints(roundRewardAmount((billAmount * percent) / 100), shop, billAmount);
   }
 
   const eligibleBands = shop.rewardBands.filter((band) => {
@@ -579,7 +579,7 @@ function calculateReward(shop, billAmount) {
   });
 
   if (!eligibleBands.length) {
-    return 10;
+    return finalizePoints(MIN_POINTS, shop, billAmount);
   }
 
   const totalProbability = eligibleBands.reduce((sum, band) => sum + Number(band.probability), 0);
@@ -590,11 +590,11 @@ function calculateReward(shop, billAmount) {
     const band = eligibleBands[index];
     cursor += Number(band.probability);
     if (roll <= cursor) {
-      return clampPoints(Number(band.reward), shop);
+      return finalizePoints(Number(band.reward), shop, billAmount);
     }
   }
 
-  return clampPoints(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_POINTS, shop);
+  return finalizePoints(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_POINTS, shop, billAmount);
 }
 
 function getShopRewardRules(shop) {
@@ -647,6 +647,15 @@ function roundRewardAmount(amount) {
 function clampPoints(amount, shop) {
   const shopLimit = Number.isFinite(Number(shop.maxReward)) ? Number(shop.maxReward) : MAX_POINTS;
   return Math.max(MIN_POINTS, Math.min(Number(amount), shopLimit, MAX_POINTS));
+}
+
+function finalizePoints(amount, shop, billAmount) {
+  const points = clampPoints(amount, shop);
+  if (!Number.isFinite(Number(billAmount)) || Number(billAmount) < MIN_POINTS) {
+    return points;
+  }
+
+  return Math.min(points, Math.floor(Number(billAmount)));
 }
 
 function readShops() {

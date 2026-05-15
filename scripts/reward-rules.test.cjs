@@ -75,6 +75,11 @@ function assertRewardBounds(reward, label) {
   assert.ok(reward <= 1000, `${label}: expected reward <= 1000, got ${reward}`);
 }
 
+function assertRewardDoesNotExceedBill(reward, bill, label) {
+  if (bill < 10) return;
+  assert.ok(reward <= Math.floor(bill), `${label}: expected reward <= bill ${bill}, got ${reward}`);
+}
+
 function runSuite(label, calculateReward) {
   const deterministicCases = [
     {
@@ -90,6 +95,13 @@ function runSuite(label, calculateReward) {
       shop: makeShop({ rewardBands: [{ reward: 5000, probability: 100 }] }),
       bill: 25000,
       expected: 1000,
+    },
+    {
+      name: "fixed band above purchase total is capped at purchase total",
+      random: 0,
+      shop: makeShop({ rewardBands: [{ reward: 50, probability: 100 }] }),
+      bill: 11,
+      expected: 11,
     },
     {
       name: "shop maximum still applies inside universal maximum",
@@ -138,6 +150,7 @@ function runSuite(label, calculateReward) {
   for (const testCase of deterministicCases) {
     const reward = withRandom(testCase.random, () => calculateReward(testCase.shop, testCase.bill));
     assert.equal(reward, testCase.expected, `${label}: ${testCase.name}`);
+    assertRewardDoesNotExceedBill(reward, testCase.bill, `${label}: ${testCase.name}`);
   }
 
   const shops = [
@@ -181,6 +194,7 @@ function runSuite(label, calculateReward) {
       for (let index = 0; index < 1000; index += 1) {
         const reward = calculateReward(shop, bill);
         assertRewardBounds(reward, `${label}: ${shop.id} bill ${bill} run ${index}`);
+        assertRewardDoesNotExceedBill(reward, bill, `${label}: ${shop.id} bill ${bill} run ${index}`);
       }
     }
   }

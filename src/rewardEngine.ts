@@ -9,7 +9,7 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return clampPoints(roundRewardAmount((billAmount * percent) / 100), shop);
+    return finalizePoints(roundRewardAmount((billAmount * percent) / 100), shop, billAmount);
   }
 
   const eligibleBands = shop.rewardBands.filter(
@@ -20,7 +20,7 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   );
 
   if (!eligibleBands.length) {
-    return 10;
+    return finalizePoints(MIN_POINTS, shop, billAmount);
   }
 
   const totalProbability = eligibleBands.reduce((sum, band) => sum + (band.probability ?? 0), 0);
@@ -30,11 +30,11 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   for (const band of eligibleBands) {
     cursor += band.probability ?? 0;
     if (roll <= cursor) {
-      return clampPoints(band.reward ?? MIN_POINTS, shop);
+      return finalizePoints(band.reward ?? MIN_POINTS, shop, billAmount);
     }
   }
 
-  return clampPoints(eligibleBands[0]?.reward ?? MIN_POINTS, shop);
+  return finalizePoints(eligibleBands[0]?.reward ?? MIN_POINTS, shop, billAmount);
 }
 
 function getShopRewardRules(shop: Shop) {
@@ -84,6 +84,15 @@ function roundRewardAmount(amount: number) {
 function clampPoints(amount: number, shop: Shop) {
   const shopLimit = Number.isFinite(shop.maxReward) ? shop.maxReward : MAX_POINTS;
   return Math.max(MIN_POINTS, Math.min(amount, shopLimit, MAX_POINTS));
+}
+
+function finalizePoints(amount: number, shop: Shop, billAmount: number) {
+  const points = clampPoints(amount, shop);
+  if (!Number.isFinite(billAmount) || billAmount < MIN_POINTS) {
+    return points;
+  }
+
+  return Math.min(points, Math.floor(billAmount));
 }
 
 function normalizeLookup(value: string) {

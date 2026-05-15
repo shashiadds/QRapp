@@ -121,6 +121,19 @@ describe("calculateReward", () => {
     expect(reward).toBe(1000);
   });
 
+  it("caps fixed band points at the purchase total", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const reward = calculateReward(
+      shop({
+        rewardBands: [{ reward: 50, probability: 100 }],
+      }),
+      11
+    );
+
+    expect(reward).toBe(11);
+  });
+
   it("falls back to 10 points when no reward bands are eligible", () => {
     const reward = calculateReward(
       shop({
