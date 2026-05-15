@@ -39,7 +39,7 @@ function loadAppsScriptRewardModule() {
     Math,
   });
   vm.runInContext(
-    `${source}\nmodule.exports = { calculateReward, getDefaultRewardRules, findPercentRewardRule };`,
+    `${source}\nmodule.exports = { calculateReward, getDefaultRewardRules, findPercentRewardRule, buildObjectRow };`,
     context,
     { filename: "apps-script/Code.gs" }
   );
@@ -206,6 +206,47 @@ const data = loadTsModule("src/data.ts");
 
 runSuite("frontend rewardEngine.ts", frontendReward.calculateReward);
 runSuite("apps-script Code.gs", appsScriptReward.calculateReward);
+
+{
+  const existingTransactionHeaders = [
+    "id",
+    "mobile",
+    "shopId",
+    "billAmount",
+    "reward",
+    "status",
+    "timestamp",
+    "customerName",
+    "address",
+    "ipAddress",
+    "location",
+    "latitude",
+    "longitude",
+    "rewardRule",
+    "rewardDetails",
+  ];
+  const row = appsScriptReward.buildObjectRow(existingTransactionHeaders, {
+    id: "TRX-1",
+    mobile: "9876543210",
+    shopId: "RahulAgency",
+    billAmount: 45000,
+    reward: 1000,
+    status: "approved",
+    timestamp: "2026-05-15T00:00:00.000Z",
+    customerName: "Test",
+    address: "Pune",
+    ipAddress: "Unknown",
+    location: "Unknown",
+    latitude: "",
+    longitude: "",
+    rewardRule: "percentage-slab",
+    rewardDetails: "2.50% of 45000",
+  });
+
+  assert.equal(row[5], "approved", "append rows should respect existing status column position");
+  assert.equal(row[13], "percentage-slab", "append rows should put rewardRule in the actual rewardRule column");
+  assert.equal(row[14], "2.50% of 45000", "append rows should put rewardDetails in the actual rewardDetails column");
+}
 
 for (const shop of data.shops) {
   for (const band of shop.rewardBands) {

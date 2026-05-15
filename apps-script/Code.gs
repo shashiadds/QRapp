@@ -859,8 +859,14 @@ function readObjects(sheetName) {
 
 function appendObject(sheetName, headers, object) {
   ensureHeaders(sheetName, headers);
-  const row = headers.map((header) => object[header]);
-  SpreadsheetApp.getActive().getSheetByName(sheetName).appendRow(row);
+  const sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const row = buildObjectRow(currentHeaders, object);
+  sheet.appendRow(row);
+}
+
+function buildObjectRow(headers, object) {
+  return headers.map((header) => object[header]);
 }
 
 function ensureHeaders(sheetName, headers) {
