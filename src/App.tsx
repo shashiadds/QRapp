@@ -970,7 +970,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
                   <td>{shopName}</td>
                   <td>{row.billCount}</td>
                   <td>{formatPlainNumber(row.totalBills)}</td>
-                  <td>{formatPoints(row.totalPoints)}</td>
+                  <td>{formatPlainNumber(row.totalPoints)}</td>
                 </tr>
               )
             })}
@@ -1202,7 +1202,7 @@ function TransactionTable({
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
                 <td>{formatPlainNumber(transaction.billAmount)}</td>
-                <td>{formatPoints(transaction.reward)}</td>
+                <td>{formatPlainNumber(transaction.reward)}</td>
                 <td>
                   <span className={`status ${transaction.status}`}>{transaction.status}</span>
                 </td>
