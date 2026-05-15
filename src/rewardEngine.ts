@@ -5,11 +5,26 @@ const MAX_POINTS = 1000;
 
 const makeId = () => `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
 
+type RewardCalculation = {
+  points: number;
+  rule: string;
+  details: string;
+};
+
 export function calculateReward(shop: Shop, billAmount: number): number {
+  return calculateRewardDetails(shop, billAmount).points;
+}
+
+function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculation {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return finalizePoints(roundRewardAmount((billAmount * percent) / 100), shop, billAmount);
+    const rawPoints = (billAmount * percent) / 100;
+    const roundedPoints = roundRewardAmount(rawPoints);
+    return finalizePoints(roundedPoints, shop, billAmount, {
+      rule: "percentage-slab",
+      details: `${percent.toFixed(2)}% of ${billAmount}, rounded from ${rawPoints.toFixed(2)} to ${roundedPoints}`,
+    });
   }
 
   const eligibleBands = shop.rewardBands.filter(
@@ -20,7 +35,10 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   );
 
   if (!eligibleBands.length) {
-    return finalizePoints(MIN_POINTS, shop, billAmount);
+    return finalizePoints(MIN_POINTS, shop, billAmount, {
+      rule: "minimum-fallback",
+      details: "No percentage slab or fixed reward band matched.",
+    });
   }
 
   const totalProbability = eligibleBands.reduce((sum, band) => sum + (band.probability ?? 0), 0);
@@ -30,11 +48,17 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   for (const band of eligibleBands) {
     cursor += band.probability ?? 0;
     if (roll <= cursor) {
-      return finalizePoints(band.reward ?? MIN_POINTS, shop, billAmount);
+      return finalizePoints(band.reward ?? MIN_POINTS, shop, billAmount, {
+        rule: "fixed-probability-band",
+        details: `${band.reward ?? MIN_POINTS} point band selected from roll ${roll.toFixed(4)} of ${totalProbability}`,
+      });
     }
   }
 
-  return finalizePoints(eligibleBands[0]?.reward ?? MIN_POINTS, shop, billAmount);
+  return finalizePoints(eligibleBands[0]?.reward ?? MIN_POINTS, shop, billAmount, {
+    rule: "fixed-probability-fallback",
+    details: "Probability cursor did not select a band; first eligible band used.",
+  });
 }
 
 function getShopRewardRules(shop: Shop) {
@@ -86,13 +110,30 @@ function clampPoints(amount: number, shop: Shop) {
   return Math.max(MIN_POINTS, Math.min(amount, shopLimit, MAX_POINTS));
 }
 
-function finalizePoints(amount: number, shop: Shop, billAmount: number) {
+function finalizePoints(
+  amount: number,
+  shop: Shop,
+  billAmount: number,
+  source: { rule: string; details: string }
+): RewardCalculation {
   const points = clampPoints(amount, shop);
+  const caps = [`shopMax=${shop.maxReward}`, `globalMax=${MAX_POINTS}`];
+  let finalPoints = points;
   if (!Number.isFinite(billAmount) || billAmount < MIN_POINTS) {
-    return points;
+    return {
+      points: finalPoints,
+      rule: source.rule,
+      details: `${source.details}; raw=${amount}; capped=${finalPoints}; caps=${caps.join(", ")}`,
+    };
   }
 
-  return Math.min(points, Math.floor(billAmount));
+  finalPoints = Math.min(points, Math.floor(billAmount));
+  caps.push(`purchaseTotal=${Math.floor(billAmount)}`);
+  return {
+    points: finalPoints,
+    rule: source.rule,
+    details: `${source.details}; raw=${amount}; capped=${finalPoints}; caps=${caps.join(", ")}`,
+  };
 }
 
 function normalizeLookup(value: string) {
@@ -128,7 +169,7 @@ export function submitReward(
     return { ok: false, reason: "Purchase total must be at least 10." };
   }
 
-  const reward = calculateReward(shop, billAmount);
+  const rewardCalculation = calculateRewardDetails(shop, billAmount);
 
   return {
     ok: true,
@@ -143,7 +184,9 @@ export function submitReward(
       mobile,
       shopId: shop.id,
       billAmount,
-      reward,
+      reward: rewardCalculation.points,
+      rewardRule: rewardCalculation.rule,
+      rewardDetails: rewardCalculation.details,
       status: "approved",
       timestamp: new Date().toISOString(),
     },

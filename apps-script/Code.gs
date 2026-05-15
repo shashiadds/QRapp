@@ -18,6 +18,8 @@ const HEADERS = {
     "shopId",
     "billAmount",
     "reward",
+    "rewardRule",
+    "rewardDetails",
     "status",
     "timestamp",
     "customerName",
@@ -33,6 +35,8 @@ const HEADERS = {
     "shopId",
     "billAmount",
     "reward",
+    "rewardRule",
+    "rewardDetails",
     "status",
     "timestamp",
     "customerName",
@@ -543,6 +547,8 @@ function submitReward(
     return { ok: false, reason: "Purchase total must be at least 10." };
   }
 
+  const rewardCalculation = calculateRewardDetails(shop, billAmount);
+
   const transaction = {
     id: makeTransactionId(),
     customerName: String(customerName).trim(),
@@ -554,7 +560,9 @@ function submitReward(
     mobile: String(mobile),
     shopId: shop.id,
     billAmount,
-    reward: calculateReward(shop, billAmount),
+    reward: rewardCalculation.points,
+    rewardRule: rewardCalculation.rule,
+    rewardDetails: rewardCalculation.details,
     status: "approved",
     timestamp: new Date().toISOString(),
   };
@@ -564,10 +572,19 @@ function submitReward(
 }
 
 function calculateReward(shop, billAmount) {
+  return calculateRewardDetails(shop, billAmount).points;
+}
+
+function calculateRewardDetails(shop, billAmount) {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return finalizePoints(roundRewardAmount((billAmount * percent) / 100), shop, billAmount);
+    const rawPoints = (billAmount * percent) / 100;
+    const roundedPoints = roundRewardAmount(rawPoints);
+    return finalizePoints(roundedPoints, shop, billAmount, {
+      rule: "percentage-slab",
+      details: percent.toFixed(2) + "% of " + billAmount + ", rounded from " + rawPoints.toFixed(2) + " to " + roundedPoints,
+    });
   }
 
   const eligibleBands = shop.rewardBands.filter((band) => {
@@ -579,7 +596,10 @@ function calculateReward(shop, billAmount) {
   });
 
   if (!eligibleBands.length) {
-    return finalizePoints(MIN_POINTS, shop, billAmount);
+    return finalizePoints(MIN_POINTS, shop, billAmount, {
+      rule: "minimum-fallback",
+      details: "No percentage slab or fixed reward band matched.",
+    });
   }
 
   const totalProbability = eligibleBands.reduce((sum, band) => sum + Number(band.probability), 0);
@@ -590,11 +610,17 @@ function calculateReward(shop, billAmount) {
     const band = eligibleBands[index];
     cursor += Number(band.probability);
     if (roll <= cursor) {
-      return finalizePoints(Number(band.reward), shop, billAmount);
+      return finalizePoints(Number(band.reward), shop, billAmount, {
+        rule: "fixed-probability-band",
+        details: Number(band.reward) + " point band selected from roll " + roll.toFixed(4) + " of " + totalProbability,
+      });
     }
   }
 
-  return finalizePoints(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_POINTS, shop, billAmount);
+  return finalizePoints(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_POINTS, shop, billAmount, {
+    rule: "fixed-probability-fallback",
+    details: "Probability cursor did not select a band; first eligible band used.",
+  });
 }
 
 function getShopRewardRules(shop) {
@@ -649,13 +675,25 @@ function clampPoints(amount, shop) {
   return Math.max(MIN_POINTS, Math.min(Number(amount), shopLimit, MAX_POINTS));
 }
 
-function finalizePoints(amount, shop, billAmount) {
+function finalizePoints(amount, shop, billAmount, source) {
   const points = clampPoints(amount, shop);
+  const caps = ["shopMax=" + shop.maxReward, "globalMax=" + MAX_POINTS];
+  let finalPoints = points;
   if (!Number.isFinite(Number(billAmount)) || Number(billAmount) < MIN_POINTS) {
-    return points;
+    return {
+      points: finalPoints,
+      rule: source.rule,
+      details: source.details + "; raw=" + amount + "; capped=" + finalPoints + "; caps=" + caps.join(", "),
+    };
   }
 
-  return Math.min(points, Math.floor(Number(billAmount)));
+  finalPoints = Math.min(points, Math.floor(Number(billAmount)));
+  caps.push("purchaseTotal=" + Math.floor(Number(billAmount)));
+  return {
+    points: finalPoints,
+    rule: source.rule,
+    details: source.details + "; raw=" + amount + "; capped=" + finalPoints + "; caps=" + caps.join(", "),
+  };
 }
 
 function readShops() {
@@ -698,6 +736,8 @@ function readTransactions(includeArchive) {
       shopId: String(row.shopId),
       billAmount: Number(row.billAmount),
       reward: Number(row.reward),
+      rewardRule: String(row.rewardRule || ""),
+      rewardDetails: String(row.rewardDetails || ""),
       status: String(row.status),
       timestamp: String(row.timestamp),
     }))

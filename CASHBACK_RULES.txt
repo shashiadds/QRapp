@@ -1,0 +1,100 @@
+Smart Mudra Cashback / Points Rules
+===================================
+
+Note
+----
+The app now shows rewards as "points", not rupees or cashback. This document lists the current cashback-style point rules used by the reward engine.
+
+
+Global rules
+------------
+1. Minimum purchase total required to submit: 10.
+2. Minimum points before final purchase cap: 10.
+3. Global maximum points before final purchase cap: 1000.
+4. Shop maximum points also applies through each shop's maxReward value.
+5. Final awarded points can never exceed the purchase total.
+   Example: purchase total 11 can receive at most 11 points.
+6. Percentage-based points are rounded down to the nearest 10 before caps are applied.
+7. Percentage slab rules are checked first.
+8. Fixed/probability reward bands are used only when no percentage slab matches the purchase total.
+
+
+Default percentage slabs
+------------------------
+These apply to most shops unless a special shop-specific percentage rule exists.
+
+Purchase total 50 to 500:
+- Random percentage: 8% to 15%
+
+Purchase total 500 to 1000:
+- Random percentage: 5% to 10%
+
+Purchase total 1000 to 2000:
+- Random percentage: 7% to 15%
+
+Purchase total 2000 to 3500:
+- Random percentage: 5% to 10%
+
+Purchase total 3500 to 6000:
+- Random percentage: 5% to 8%
+
+Purchase total 6000 to 10000:
+- Random percentage: 4% to 6%
+
+
+Special shop percentage slabs
+-----------------------------
+Rahul Agency
+
+Purchase total 0 to 1000:
+- Random percentage: 10% to 15%
+
+Purchase total 1000 to 5000:
+- Random percentage: 10% to 20%
+
+Purchase total 5000 to 10000:
+- Random percentage: 10% to 15%
+
+Purchase total 10000 to 50000:
+- Random percentage: 2% to 7%
+
+
+Seed shop rules
+---------------
+Kale Medical
+- Shop ID: KaleMedical
+- Category: Medical Store
+- Status: active
+- Shop maximum points: 600
+- Cost per scan: 10
+- Uses the default percentage slabs listed above.
+
+Patil Kirana
+- Shop ID: PatilStore
+- Category: Kirana Shop
+- Status: active
+- Shop maximum points: 100
+- Cost per scan: 8
+- Uses default percentage slabs when purchase total is 50 or above.
+- Fixed/probability bands can apply when no percentage slab matches:
+  - 10 points: 75% probability
+  - 20 points: 15% probability
+  - 50 points: 8% probability, minimum purchase total 100
+  - 100 points: 2% probability, minimum purchase total 200
+
+Joshi Mini Mart
+- Shop ID: JoshiMart
+- Category: Retail
+- Status: paused
+- Shop maximum points: 50
+- Cost per scan: 6
+- Uses default percentage slabs when purchase total is 50 or above.
+- Fixed/probability bands can apply when no percentage slab matches:
+  - 10 points: 85% probability
+  - 20 points: 10% probability
+  - 50 points: 5% probability, minimum purchase total 150
+
+
+Operational note
+----------------
+If shops are loaded from Google Sheets, their shop names, status, maxReward, costPerScan, and rewardBands may differ from the seed shop rules above. The global rules and percentage-slab precedence still apply in the current engine.

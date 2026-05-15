@@ -31,6 +31,8 @@ export type Transaction = {
   shopId: string;
   billAmount: number;
   reward: number;
+  rewardRule?: string;
+  rewardDetails?: string;
   status: "approved" | "blocked";
   timestamp: string;
 };
