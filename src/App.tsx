@@ -522,8 +522,6 @@ function CustomerFlow({
             <CheckCircle2 size={42} />
             <span>You won</span>
             <strong>{formatPoints(reward ?? 0)}</strong>
-            <p>Show this screen at the counter to record your points.</p>
-            <p className="muted-note">Points have no cash value and are subject to shop rules.</p>
             <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151' }}>
               Thank you for shopping! Visit again.
             </p>
