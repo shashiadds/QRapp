@@ -1,7 +1,7 @@
 import type { RewardResult, Shop, Transaction, VisitorContext } from "./types";
 
-const MIN_CASHBACK = 10;
-const MAX_CASHBACK = 1000;
+const MIN_POINTS = 10;
+const MAX_POINTS = 1000;
 
 const makeId = () => `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -9,7 +9,7 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return clampCashback(roundRewardAmount((billAmount * percent) / 100), shop);
+    return clampPoints(roundRewardAmount((billAmount * percent) / 100), shop);
   }
 
   const eligibleBands = shop.rewardBands.filter(
@@ -30,11 +30,11 @@ export function calculateReward(shop: Shop, billAmount: number): number {
   for (const band of eligibleBands) {
     cursor += band.probability ?? 0;
     if (roll <= cursor) {
-      return clampCashback(band.reward ?? MIN_CASHBACK, shop);
+      return clampPoints(band.reward ?? MIN_POINTS, shop);
     }
   }
 
-  return clampCashback(eligibleBands[0]?.reward ?? MIN_CASHBACK, shop);
+  return clampPoints(eligibleBands[0]?.reward ?? MIN_POINTS, shop);
 }
 
 function getShopRewardRules(shop: Shop) {
@@ -78,12 +78,12 @@ function randomBetween(min = 0, max = 0) {
 }
 
 function roundRewardAmount(amount: number) {
-  return Math.max(MIN_CASHBACK, Math.floor(amount / 10) * 10);
+  return Math.max(MIN_POINTS, Math.floor(amount / 10) * 10);
 }
 
-function clampCashback(amount: number, shop: Shop) {
-  const shopLimit = Number.isFinite(shop.maxReward) ? shop.maxReward : MAX_CASHBACK;
-  return Math.max(MIN_CASHBACK, Math.min(amount, shopLimit, MAX_CASHBACK));
+function clampPoints(amount: number, shop: Shop) {
+  const shopLimit = Number.isFinite(shop.maxReward) ? shop.maxReward : MAX_POINTS;
+  return Math.max(MIN_POINTS, Math.min(amount, shopLimit, MAX_POINTS));
 }
 
 function normalizeLookup(value: string) {
@@ -116,7 +116,7 @@ export function submitReward(
   }
 
   if (!Number.isFinite(billAmount) || billAmount < 10) {
-    return { ok: false, reason: "Bill amount must be at least ₹10." };
+    return { ok: false, reason: "Purchase total must be at least 10." };
   }
 
   const reward = calculateReward(shop, billAmount);

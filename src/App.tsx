@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Download,
   Gift,
-  IndianRupee,
   QrCode,
   ScanLine,
   Settings2,
@@ -24,18 +23,28 @@ import {
   transactions as seedTransactions,
 } from "./data";
 import { submitReward } from "./rewardEngine";
-import { isSheetsConfigured, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop } from "./sheetsApi";
-import type { FraudSignal, Shop, Transaction, VisitorContext } from "./types";
+import { isSheetsConfigured, loadPublicData, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop } from "./sheetsApi";
+import type { FraudSignal, Session, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 
 type View = "customer" | "shop" | "admin";
-type Session = { role: string; shopId?: string } | null;
+type ActiveSession = Session | null;
 
-const currency = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
+const pointNumber = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
+
+const plainNumber = new Intl.NumberFormat("en-IN", {
+  maximumFractionDigits: 0,
+});
+
+function formatPoints(value: number) {
+  return `${pointNumber.format(value)} points`;
+}
+
+function formatPlainNumber(value: number) {
+  return plainNumber.format(value);
+}
 
 const readableDate = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -134,7 +143,7 @@ function App() {
     const saved = localStorage.getItem("smart-mudra-transactions");
     return saved ? JSON.parse(saved) : seedTransactions;
   });
-  const [session, setSession] = useState<Session>(() => {
+  const [session, setSession] = useState<ActiveSession>(() => {
     const saved = localStorage.getItem("smart-mudra-session");
     return saved ? JSON.parse(saved) : null;
   });
@@ -168,11 +177,9 @@ function App() {
       return;
     }
 
-    loadSheetsData({ includeArchive: false })
+    loadPublicData()
       .then((data) => {
         setShops(data.shops.length ? data.shops : seedShops);
-        setTransactions(data.transactions);
-        setFraudSignals(data.fraudSignals);
         setDataStatus("Google Sheets connected");
       })
       .catch((error) => {
@@ -181,11 +188,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isSheetsConfigured || !session || hasLoadedArchive) {
+    if (!isSheetsConfigured || !session?.token || hasLoadedArchive) {
       return;
     }
 
-    loadSheetsData({ includeArchive: true })
+    loadSheetsData({ includeArchive: true, token: session.token })
       .then((data) => {
         setShops(data.shops.length ? data.shops : seedShops);
         setTransactions(data.transactions);
@@ -201,9 +208,20 @@ function App() {
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
   const adminShop = selectedShop || shops.find((shop) => shop.status === "active") || shops[0];
   const sessionRole = normalizeRole(session?.role);
+  const needsFreshLogin = Boolean(isSheetsConfigured && session && !session.token);
   const sessionShop = session?.shopId
     ? shops.find((shop) => normalizeShopLookup(shop.id) === normalizeShopLookup(session.shopId))
     : undefined;
+  const handleLogin = (nextSession: Session) => {
+    setHasLoadedArchive(false);
+    setSession(nextSession);
+  };
+  const handleLogout = () => {
+    setSession(null);
+    setTransactions([]);
+    setFraudSignals([]);
+    setHasLoadedArchive(false);
+  };
 
   return (
     <main>
@@ -223,16 +241,16 @@ function App() {
               <QrCode size={64} style={{ color: '#059669', marginBottom: '1.5rem' }} />
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Scan to win!</h2>
               <p style={{ color: '#4b5563', maxWidth: '320px', lineHeight: 1.5 }}>
-                Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant cashback.
+                Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant points.
               </p>
             </div>
           </section>
         )
       )}
       {view === "shop" && (
-        sessionRole === "admin" ? (
+        sessionRole === "admin" && !needsFreshLogin ? (
           <div>
-            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
+            <button style={{ float: "right", margin: "1rem" }} onClick={handleLogout}>
               Logout
             </button>
             {adminShop ? (
@@ -253,11 +271,11 @@ function App() {
               </section>
             )}
           </div>
-        ) : !session || sessionRole !== "shopadmin" ? (
-          <Login title="Shop Login" allowedRoles={["shopAdmin", "admin"]} onLogin={setSession} />
+        ) : !session || needsFreshLogin || sessionRole !== "shopadmin" ? (
+          <Login title="Shop Login" allowedRoles={["shopAdmin", "admin"]} onLogin={handleLogin} />
         ) : (
           <div>
-            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
+            <button style={{ float: "right", margin: "1rem" }} onClick={handleLogout}>
               Logout
             </button>
             {sessionShop ? (
@@ -285,11 +303,11 @@ function App() {
         )
       )}
       {view === "admin" && (
-        !session || sessionRole !== "admin" ? (
-          <Login title="Admin Login" expectedRole="admin" onLogin={setSession} />
+        !session || needsFreshLogin || sessionRole !== "admin" ? (
+          <Login title="Admin Login" expectedRole="admin" onLogin={handleLogin} />
         ) : (
           <div>
-            <button style={{ float: "right", margin: "1rem" }} onClick={() => setSession(null)}>
+            <button style={{ float: "right", margin: "1rem" }} onClick={handleLogout}>
               Logout
             </button>
             <AdminDashboard
@@ -297,6 +315,7 @@ function App() {
               setShops={setShops}
               transactions={transactions}
               fraudSignals={fraudSignals}
+              session={session}
             />
           </div>
         )
@@ -324,7 +343,7 @@ function TopBar({
     <header className="topbar">
       <div className="brand">
         <div className="brand-mark">
-          <IndianRupee size={22} />
+          <Trophy size={22} />
         </div>
         <div>
           <strong>Smart Mudra</strong>
@@ -446,7 +465,7 @@ function CustomerFlow({
             <div className="headline">
               <Gift size={34} />
               <h2>Try your luck</h2>
-              <p>Enter today&apos;s bill details to reveal instant cashback.</p>
+              <p>Enter today&apos;s bill details to reveal instant points.</p>
             </div>
             <label>
               Customer name
@@ -476,7 +495,7 @@ function CustomerFlow({
               />
             </label>
             <label>
-              Bill amount
+              Purchase total
               <input
                 inputMode="decimal"
                 value={billAmount}
@@ -502,8 +521,9 @@ function CustomerFlow({
           <div className="reward-reveal">
             <CheckCircle2 size={42} />
             <span>You won</span>
-            <strong>{currency.format(reward ?? 0)}</strong>
-            <p>Show this screen at the counter to redeem your cashback.</p>
+            <strong>{formatPoints(reward ?? 0)}</strong>
+            <p>Show this screen at the counter to record your points.</p>
+            <p className="muted-note">Points have no cash value and are subject to shop rules.</p>
             <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151' }}>
               Thank you for shopping! Visit again.
             </p>
@@ -538,7 +558,7 @@ function ShopDashboard({
   const [qrUrl, setQrUrl] = useState("");
   const shopTransactions = transactions.filter((transaction) => transaction.shopId === shop.id);
   const approved = shopTransactions.filter((transaction) => transaction.status === "approved");
-  const totalCashback = approved.reduce((sum, item) => sum + item.reward, 0);
+  const totalPoints = approved.reduce((sum, item) => sum + item.reward, 0);
   const averageBill = approved.length
     ? approved.reduce((sum, item) => sum + item.billAmount, 0) / approved.length
     : 0;
@@ -570,9 +590,9 @@ function ShopDashboard({
       <MetricGrid
         metrics={[
           { label: "Total scans", value: shopTransactions.length.toString(), icon: ScanLine },
-          { label: "Cashback given", value: currency.format(totalCashback), icon: IndianRupee },
-          { label: "Average bill", value: currency.format(averageBill), icon: BarChart3 },
-          { label: "Cost per scan", value: currency.format(shop.costPerScan), icon: Activity },
+          { label: "Points given", value: formatPoints(totalPoints), icon: Trophy },
+          { label: "Average purchase", value: formatPlainNumber(averageBill), icon: BarChart3 },
+          { label: "Cost per scan", value: formatPoints(shop.costPerScan), icon: Activity },
         ]}
       />
 
@@ -607,11 +627,13 @@ function AdminDashboard({
   setShops,
   transactions,
   fraudSignals,
+  session,
 }: {
   shops: Shop[];
   setShops: (shops: Shop[]) => void;
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
+  session: ActiveSession;
 }) {
   const [isAddingShop, setIsAddingShop] = useState(false);
   const [newShopName, setNewShopName] = useState("");
@@ -630,7 +652,7 @@ function AdminDashboard({
     setIsSubmitting(true);
     try {
       if (isSheetsConfigured) {
-        const result = await addSheetsShop({ name: newShopName, category: newShopCategory });
+        const result = await addSheetsShop({ name: newShopName, category: newShopCategory }, session);
         if (result.ok) {
           setShops([...shops, result.shop]);
           setCreatedCredentials(result.credentials);
@@ -660,7 +682,7 @@ function AdminDashboard({
     setDeletingShopId(shop.id);
     try {
       if (isSheetsConfigured) {
-        const result = await deleteSheetsShop(shop.id);
+        const result = await deleteSheetsShop(shop.id, session);
         if (!result.ok) {
           alert("Failed to delete shop.");
           return;
@@ -691,7 +713,7 @@ function AdminDashboard({
       <MetricGrid
         metrics={[
           { label: "Platform scans", value: transactions.length.toString(), icon: ScanLine },
-          { label: "Total discount given", value: currency.format(payout), icon: Gift },
+          { label: "Total points given", value: formatPoints(payout), icon: Gift },
           { label: "Active shops", value: shops.filter((shop) => shop.status === "active").length.toString(), icon: Store },
         ]}
       />
@@ -798,7 +820,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
   const [pageSize, setPageSize] = useState(10);
 
   const summary = useMemo(() => {
-    const data: Record<string, { date: string; shopId: string; billCount: number; totalBills: number; totalCashbacks: number }> = {};
+    const data: Record<string, { date: string; shopId: string; billCount: number; totalBills: number; totalPoints: number }> = {};
     
     transactions.forEach(tx => {
       if (tx.status !== "approved") return;
@@ -810,11 +832,11 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
 
       const key = `${date}|${tx.shopId}`;
       if (!data[key]) {
-        data[key] = { date, shopId: tx.shopId, billCount: 0, totalBills: 0, totalCashbacks: 0 };
+        data[key] = { date, shopId: tx.shopId, billCount: 0, totalBills: 0, totalPoints: 0 };
       }
       data[key].billCount += 1;
       data[key].totalBills += tx.billAmount;
-      data[key].totalCashbacks += tx.reward;
+      data[key].totalPoints += tx.reward;
     });
 
     return Object.values(data).sort((a, b) => b.date.localeCompare(a.date));
@@ -856,10 +878,10 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Shop Name", "Shop ID", "Bill Count", "Total Bills", "Total Cashbacks"];
+            const headers = ["Date", "Shop Name", "Shop ID", "Purchase Count", "Total Purchase Value", "Total Points"];
             const rows = filteredSummary.map(row => {
               const shop = shops.find(s => s.id === row.shopId);
-              return [row.date, shop ? shop.name : row.shopId, row.shopId, row.billCount, row.totalBills, row.totalCashbacks];
+              return [row.date, shop ? shop.name : row.shopId, row.shopId, row.billCount, row.totalBills, row.totalPoints];
             });
             downloadCSV("daily_report.csv", [headers, ...rows]);
           }}
@@ -916,9 +938,9 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
             <tr>
               <th>Date</th>
               <th>Shop</th>
-              <th>Bill Count</th>
-              <th>Total Bills</th>
-              <th>Total Cashbacks</th>
+              <th>Purchases</th>
+              <th>Total Purchase</th>
+              <th>Total Points</th>
             </tr>
           </thead>
           <tbody>
@@ -930,8 +952,8 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
                   <td>{row.date}</td>
                   <td>{shopName}</td>
                   <td>{row.billCount}</td>
-                  <td>{currency.format(row.totalBills)}</td>
-                  <td>{currency.format(row.totalCashbacks)}</td>
+                  <td>{formatPlainNumber(row.totalBills)}</td>
+                  <td>{formatPoints(row.totalPoints)}</td>
                 </tr>
               )
             })}
@@ -1050,7 +1072,7 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Bill Amount", "Reward", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Points", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
               formatTransactionDate(tx.timestamp),
               formatTransactionTime(tx.timestamp),
@@ -1147,8 +1169,8 @@ function TransactionTable({
               <th>Mobile</th>
               {!compact && <th>Name</th>}
               {!compact && <th>Shop</th>}
-              <th>Bill</th>
-              <th>Reward</th>
+              <th>Purchase</th>
+              <th>Points</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -1160,8 +1182,8 @@ function TransactionTable({
                 <td>{transaction.mobile}</td>
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
-                <td>{currency.format(transaction.billAmount)}</td>
-                <td>{currency.format(transaction.reward)}</td>
+                <td>{formatPlainNumber(transaction.billAmount)}</td>
+                <td>{formatPoints(transaction.reward)}</td>
                 <td>
                   <span className={`status ${transaction.status}`}>{transaction.status}</span>
                 </td>

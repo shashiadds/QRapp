@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("calculateReward", () => {
-  it("never returns less than 10 cashback for fixed reward bands", () => {
+  it("never returns less than 10 points for fixed reward bands", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
 
     const reward = calculateReward(
@@ -107,7 +107,7 @@ describe("calculateReward", () => {
     expect(reward).toBe(30);
   });
 
-  it("caps fixed bands at the global 1000 cashback limit", () => {
+  it("caps fixed bands at the global 1000 points limit", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
 
     const reward = calculateReward(
@@ -121,7 +121,7 @@ describe("calculateReward", () => {
     expect(reward).toBe(1000);
   });
 
-  it("falls back to 10 cashback when no reward bands are eligible", () => {
+  it("falls back to 10 points when no reward bands are eligible", () => {
     const reward = calculateReward(
       shop({
         rewardBands: [{ reward: 50, probability: 100, minBill: 500 }],
@@ -159,7 +159,7 @@ describe("calculateReward", () => {
     expect(reward).toBe(60);
   });
 
-  it("caps percent rewards at the global 1000 cashback limit", () => {
+  it("caps percent rewards at the global 1000 points limit", () => {
     vi.spyOn(Math, "random").mockReturnValue(1);
 
     const reward = calculateReward(
@@ -233,7 +233,7 @@ describe("submitReward", () => {
     expect(result).toEqual({ ok: false, reason: "This shop is not accepting new scans." });
   });
 
-  it("validates customer name, address, mobile, and minimum bill amount", () => {
+  it("validates customer name, address, mobile, and minimum purchase total", () => {
     expect(
       submitReward(baseShop, " ", "Pune", "9876543210", 100, [], visitorContext)
     ).toEqual({ ok: false, reason: "Enter customer name." });
@@ -248,7 +248,7 @@ describe("submitReward", () => {
 
     expect(
       submitReward(baseShop, "Neha Patil", "Pune", "9876543210", 9, [], visitorContext)
-    ).toEqual({ ok: false, reason: "Bill amount must be at least ₹10." });
+    ).toEqual({ ok: false, reason: "Purchase total must be at least 10." });
   });
 
   it("allows the same mobile to receive multiple rewards at the same shop today", () => {

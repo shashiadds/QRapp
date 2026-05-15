@@ -4,10 +4,11 @@ const SHEETS = {
   transactionArchive: "transactions_archive",
   fraud: "fraud",
   admins: "admins",
+  sessions: "sessions",
 };
 
-const MIN_CASHBACK = 10;
-const MAX_CASHBACK = 1000;
+const MIN_POINTS = 10;
+const MAX_POINTS = 1000;
 
 const HEADERS = {
   shops: ["id", "name", "category", "status", "maxReward", "costPerScan", "rewardBands"],
@@ -42,7 +43,8 @@ const HEADERS = {
     "longitude",
   ],
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
-  admins: ["username", "password", "role", "shopId"],
+  admins: ["username", "password", "passwordSalt", "passwordHash", "role", "shopId"],
+  sessions: ["token", "username", "role", "shopId", "expiresAt", "createdAt"],
 };
 
 const SEED_SHOPS = [
@@ -93,8 +95,17 @@ function setupSmartMudraSheet() {
         sheet.getRange(2, 1, SEED_SHOPS.length, HEADERS.shops.length).setValues(SEED_SHOPS);
       }
       if (key === "admins") {
-        // Add a default admin (username: admin, password: admin123) - change after first login
-        sheet.getRange(2, 1, 1, 2).setValues([["admin", "admin123"]]);
+        const temporaryPassword = makeTemporaryPassword();
+        const passwordRecord = hashPassword(temporaryPassword);
+        sheet.getRange(2, 1, 1, HEADERS.admins.length).setValues([[
+          "admin",
+          "",
+          passwordRecord.salt,
+          passwordRecord.hash,
+          "admin",
+          "",
+        ]]);
+        sheet.getRange(2, 1).setNote("Temporary admin password: " + temporaryPassword + ". Change it after first login.");
       }
     } else {
       // Only ensure headers if sheet exists, do not clear data
@@ -106,12 +117,24 @@ function setupSmartMudraSheet() {
 function doGet(event) {
   const action = event.parameter.action || "bootstrap";
 
-  if (action === "bootstrap") {
-    const includeArchive = event.parameter.includeArchive === "true" || event.parameter.includeArchive === "1";
+  if (action === "publicBootstrap") {
     return jsonResponse({
-      shops: readShops(),
-      transactions: readTransactions(includeArchive),
-      fraudSignals: readFraudSignals(),
+      shops: readPublicShops(),
+    });
+  }
+
+  if (action === "bootstrap") {
+    const session = validateSession(event.parameter.token, ["admin", "shopAdmin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+
+    const includeArchive = event.parameter.includeArchive === "true" || event.parameter.includeArchive === "1";
+    const transactions = readTransactions(includeArchive).filter((transaction) => canReadShop(session, transaction.shopId));
+    return jsonResponse({
+      shops: readShops().filter((shop) => canReadShop(session, shop.id)),
+      transactions: transactions,
+      fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
     });
   }
 
@@ -120,6 +143,21 @@ function doGet(event) {
 
 function doPost(event) {
   const body = JSON.parse(event.postData.contents || "{}");
+
+  if (body.action === "bootstrap") {
+    const session = validateSession(body.token, ["admin", "shopAdmin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+
+    const includeArchive = body.includeArchive === true || body.includeArchive === "true" || body.includeArchive === "1";
+    const transactions = readTransactions(includeArchive).filter((transaction) => canReadShop(session, transaction.shopId));
+    return jsonResponse({
+      shops: readShops().filter((shop) => canReadShop(session, shop.id)),
+      transactions: transactions,
+      fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
+    });
+  }
 
   if (body.action === "submitReward") {
     return jsonResponse(
@@ -142,14 +180,26 @@ function doPost(event) {
   }
 
   if (body.action === "addShop") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
     return jsonResponse(addShop(body.shop));
   }
 
   if (body.action === "deleteShop") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
     return jsonResponse(deleteShop(body.shopId));
   }
 
   if (body.action === "archiveOldTransactions") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
     return jsonResponse(archiveOldTransactions());
   }
 
@@ -173,6 +223,8 @@ function readAdmins() {
   return readObjects(SHEETS.admins).map((row) => ({
     username: String(row.username),
     password: String(row.password),
+    passwordSalt: String(row.passwordSalt || ""),
+    passwordHash: String(row.passwordHash || ""),
     role: String(row.role || "").trim(),
     shopId: String(row.shopId || "").trim(),
   })).map((admin) => {
@@ -198,14 +250,15 @@ function readAdmins() {
 function adminLogin(username, password) {
   const found = findAdminByCredentials(username, password);
   if (found) {
-    return { ok: true, isAdmin: found.role === "admin", role: found.role, shopId: found.shopId };
+    const session = createSession(found);
+    return { ok: true, isAdmin: normalizeLookup(found.role) === "admin", role: found.role, shopId: found.shopId, token: session.token };
   }
   return { ok: false, reason: "Invalid username or password." };
 }
 
 function findAdminByCredentials(username, password) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.admins);
   ensureHeaders(SHEETS.admins, HEADERS.admins);
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.admins);
 
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
@@ -215,14 +268,31 @@ function findAdminByCredentials(username, password) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const usernameIndex = headers.indexOf("username");
   const passwordIndex = headers.indexOf("password");
+  const passwordSaltIndex = headers.indexOf("passwordSalt");
+  const passwordHashIndex = headers.indexOf("passwordHash");
   const roleIndex = headers.indexOf("role");
   const shopIdIndex = headers.indexOf("shopId");
   const rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
 
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index];
-    if (String(row[usernameIndex]) !== String(username) || String(row[passwordIndex]) !== String(password)) {
+    if (String(row[usernameIndex]) !== String(username)) {
       continue;
+    }
+
+    const passwordSalt = passwordSaltIndex === -1 ? "" : String(row[passwordSaltIndex] || "");
+    const passwordHash = passwordHashIndex === -1 ? "" : String(row[passwordHashIndex] || "");
+    const legacyPassword = passwordIndex === -1 ? "" : String(row[passwordIndex] || "");
+    const passwordMatches = passwordSalt && passwordHash
+      ? verifyPassword(password, passwordSalt, passwordHash)
+      : legacyPassword === String(password);
+
+    if (!passwordMatches) {
+      continue;
+    }
+
+    if (!passwordSalt || !passwordHash || legacyPassword) {
+      migrateAdminPassword(sheet, headers, index + 2, password);
     }
 
     const role = String(row[roleIndex] || "").trim();
@@ -253,9 +323,138 @@ function normalizeAdminAccount(username, role, shopId) {
   return { username: username, role: "admin", shopId: shopId };
 }
 
+function createSession(admin) {
+  ensureHeaders(SHEETS.sessions, HEADERS.sessions);
+  clearExpiredSessions();
+
+  const token = Utilities.getUuid() + "-" + Utilities.getUuid();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 12 * 60 * 60 * 1000).toISOString();
+  appendObject(SHEETS.sessions, HEADERS.sessions, {
+    token: token,
+    username: admin.username,
+    role: admin.role,
+    shopId: admin.shopId || "",
+    expiresAt: expiresAt,
+    createdAt: now.toISOString(),
+  });
+
+  return { token: token, expiresAt: expiresAt };
+}
+
+function validateSession(token, allowedRoles) {
+  if (!token) {
+    return { ok: false, reason: "Login required." };
+  }
+
+  ensureHeaders(SHEETS.sessions, HEADERS.sessions);
+  clearExpiredSessions();
+
+  const rows = readObjects(SHEETS.sessions);
+  const session = rows.find((row) => String(row.token) === String(token));
+  if (!session) {
+    return { ok: false, reason: "Session expired. Please log in again." };
+  }
+
+  const role = String(session.role || "").trim();
+  const normalizedAllowedRoles = (allowedRoles || []).map((item) => normalizeLookup(item));
+  if (normalizedAllowedRoles.length && normalizedAllowedRoles.indexOf(normalizeLookup(role)) === -1) {
+    return { ok: false, reason: "You are not authorized for this action." };
+  }
+
+  return {
+    ok: true,
+    username: String(session.username || ""),
+    role: role,
+    shopId: String(session.shopId || ""),
+  };
+}
+
+function canReadShop(session, shopId) {
+  if (normalizeLookup(session.role) === "admin") {
+    return true;
+  }
+
+  return normalizeLookup(session.shopId) === normalizeLookup(shopId);
+}
+
+function clearExpiredSessions() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.sessions);
+  if (!sheet || sheet.getLastRow() < 2) {
+    return;
+  }
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const expiresAtIndex = headers.indexOf("expiresAt");
+  if (expiresAtIndex === -1) {
+    return;
+  }
+
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+  const now = new Date();
+  const rowsToDelete = [];
+  rows.forEach((row, index) => {
+    const expiresAt = new Date(row[expiresAtIndex]);
+    if (!row[expiresAtIndex] || expiresAt <= now) {
+      rowsToDelete.push(index + 2);
+    }
+  });
+
+  deleteRowsByNumber(sheet, rowsToDelete);
+}
+
+function makeTemporaryPassword() {
+  return "SM-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
+}
+
+function makePasswordSalt() {
+  return Utilities.getUuid() + "-" + Utilities.getUuid();
+}
+
+function hashPassword(password, salt) {
+  const passwordSalt = salt || makePasswordSalt();
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    passwordSalt + ":" + String(password),
+    Utilities.Charset.UTF_8
+  );
+
+  return {
+    salt: passwordSalt,
+    hash: digest.map((byte) => {
+      const value = byte < 0 ? byte + 256 : byte;
+      return ("0" + value.toString(16)).slice(-2);
+    }).join(""),
+  };
+}
+
+function verifyPassword(password, salt, expectedHash) {
+  return hashPassword(password, salt).hash === String(expectedHash);
+}
+
+function migrateAdminPassword(sheet, headers, rowNumber, password) {
+  ensureHeaders(SHEETS.admins, HEADERS.admins);
+  const updatedHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const passwordIndex = updatedHeaders.indexOf("password");
+  const passwordSaltIndex = updatedHeaders.indexOf("passwordSalt");
+  const passwordHashIndex = updatedHeaders.indexOf("passwordHash");
+  const passwordRecord = hashPassword(password);
+
+  if (passwordIndex !== -1) {
+    sheet.getRange(rowNumber, passwordIndex + 1).setValue("");
+  }
+  if (passwordSaltIndex !== -1) {
+    sheet.getRange(rowNumber, passwordSaltIndex + 1).setValue(passwordRecord.salt);
+  }
+  if (passwordHashIndex !== -1) {
+    sheet.getRange(rowNumber, passwordHashIndex + 1).setValue(passwordRecord.hash);
+  }
+}
+
 function addShop(shopData) {
   const shopId = String(shopData.name).replace(/\s+/g, "").toLowerCase() + Math.floor(100 + Math.random() * 900);
-  const defaultPassword = "pass" + Math.floor(1000 + Math.random() * 9000);
+  const defaultPassword = makeTemporaryPassword();
+  const passwordRecord = hashPassword(defaultPassword);
   
   const newShop = {
     id: shopId,
@@ -275,7 +474,9 @@ function addShop(shopData) {
 
   const adminRow = {
     username: shopId,
-    password: defaultPassword,
+    password: "",
+    passwordSalt: passwordRecord.salt,
+    passwordHash: passwordRecord.hash,
     role: "shopAdmin",
     shopId: shopId
   };
@@ -339,7 +540,7 @@ function submitReward(
   }
 
   if (!Number.isFinite(billAmount) || billAmount < 10) {
-    return { ok: false, reason: "Bill amount must be at least Rs 10." };
+    return { ok: false, reason: "Purchase total must be at least 10." };
   }
 
   const transaction = {
@@ -366,7 +567,7 @@ function calculateReward(shop, billAmount) {
   const percentRule = findPercentRewardRule(shop, billAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    return clampCashback(roundRewardAmount((billAmount * percent) / 100), shop);
+    return clampPoints(roundRewardAmount((billAmount * percent) / 100), shop);
   }
 
   const eligibleBands = shop.rewardBands.filter((band) => {
@@ -389,11 +590,11 @@ function calculateReward(shop, billAmount) {
     const band = eligibleBands[index];
     cursor += Number(band.probability);
     if (roll <= cursor) {
-      return clampCashback(Number(band.reward), shop);
+      return clampPoints(Number(band.reward), shop);
     }
   }
 
-  return clampCashback(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_CASHBACK, shop);
+  return clampPoints(Number(eligibleBands[0] && eligibleBands[0].reward) || MIN_POINTS, shop);
 }
 
 function getShopRewardRules(shop) {
@@ -440,12 +641,12 @@ function randomBetween(min, max) {
 }
 
 function roundRewardAmount(amount) {
-  return Math.max(MIN_CASHBACK, Math.floor(Number(amount) / 10) * 10);
+  return Math.max(MIN_POINTS, Math.floor(Number(amount) / 10) * 10);
 }
 
-function clampCashback(amount, shop) {
-  const shopLimit = Number.isFinite(Number(shop.maxReward)) ? Number(shop.maxReward) : MAX_CASHBACK;
-  return Math.max(MIN_CASHBACK, Math.min(Number(amount), shopLimit, MAX_CASHBACK));
+function clampPoints(amount, shop) {
+  const shopLimit = Number.isFinite(Number(shop.maxReward)) ? Number(shop.maxReward) : MAX_POINTS;
+  return Math.max(MIN_POINTS, Math.min(Number(amount), shopLimit, MAX_POINTS));
 }
 
 function readShops() {
@@ -458,6 +659,20 @@ function readShops() {
     costPerScan: Number(row.costPerScan),
     rewardBands: JSON.parse(row.rewardBands || "[]"),
   }));
+}
+
+function readPublicShops() {
+  return readShops()
+    .filter((shop) => shop.status === "active")
+    .map((shop) => ({
+      id: shop.id,
+      name: shop.name,
+      category: shop.category,
+      status: shop.status,
+      maxReward: 0,
+      costPerScan: 0,
+      rewardBands: [],
+    }));
 }
 
 function readTransactions(includeArchive) {
@@ -600,7 +815,12 @@ function appendObject(sheetName, headers, object) {
 }
 
 function ensureHeaders(sheetName, headers) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
+  const spreadsheet = SpreadsheetApp.getActive();
+  let sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(sheetName);
+  }
+
   const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), headers.length)).getValues()[0];
   const missingHeaders = headers.filter((header) => currentHeaders.indexOf(header) === -1);
 
@@ -671,7 +891,7 @@ function updateSummarySheet(spreadsheet) {
   
   const transactionRows = readTransactionRowsForSpreadsheet(spreadsheet);
   if (!transactionRows.rows.length) {
-    summarySheet.appendRow(["Date", "Shop ID", "Total Bills Amount", "Total Cashbacks"]);
+    summarySheet.appendRow(["Date", "Shop ID", "Total Purchase Value", "Total Points"]);
     return;
   }
   
@@ -701,21 +921,21 @@ function updateSummarySheet(spreadsheet) {
         date: date,
         shopId: shopId,
         totalBills: 0,
-        totalCashbacks: 0
+        totalPoints: 0
       };
     }
     
     summaryData[key].totalBills += billAmount;
-    summaryData[key].totalCashbacks += reward;
+    summaryData[key].totalPoints += reward;
   }
   
-  const outputRows = [["Date", "Shop ID", "Total Bills Amount", "Total Cashbacks"]];
+  const outputRows = [["Date", "Shop ID", "Total Purchase Value", "Total Points"]];
   
   const sortedKeys = Object.keys(summaryData).sort((a, b) => b.localeCompare(a));
   
   sortedKeys.forEach(key => {
     const data = summaryData[key];
-    outputRows.push([data.date, data.shopId, data.totalBills, data.totalCashbacks]);
+    outputRows.push([data.date, data.shopId, data.totalBills, data.totalPoints]);
   });
   
   summarySheet.getRange(1, 1, outputRows.length, 4).setValues(outputRows);

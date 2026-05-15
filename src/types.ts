@@ -52,6 +52,16 @@ export type AppData = {
   fraudSignals: FraudSignal[];
 };
 
+export type PublicAppData = {
+  shops: Shop[];
+};
+
+export type Session = {
+  role: string;
+  shopId?: string;
+  token?: string;
+};
+
 export type VisitorContext = {
   ipAddress: string;
   location: string;

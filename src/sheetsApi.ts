@@ -1,4 +1,4 @@
-import type { AppData, RewardResult, VisitorContext } from "./types";
+import type { AppData, PublicAppData, RewardResult, Shop, Session, VisitorContext } from "./types";
 
 const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -38,11 +38,17 @@ async function request<T>(
   return result as T;
 }
 
-export function loadSheetsData(options: { includeArchive?: boolean } = {}) {
+export function loadPublicData() {
+  return request<PublicAppData>("publicBootstrap");
+}
+
+export function loadSheetsData(options: { includeArchive?: boolean; token?: string } = {}) {
   return request<AppData>(
     "bootstrap",
-    undefined,
-    options.includeArchive ? { includeArchive: "true" } : undefined
+    {
+      includeArchive: Boolean(options.includeArchive),
+      token: options.token,
+    }
   );
 }
 
@@ -68,20 +74,22 @@ export function submitSheetsReward(
 }
 
 export function authLogin(password: string, username: string) {
-  return request<{ ok: boolean; role?: string; shopId?: string; isAdmin?: boolean }>("adminLogin", {
+  return request<{ ok: boolean; role?: string; shopId?: string; isAdmin?: boolean; token?: string }>("adminLogin", {
     username,
     password,
   });
 }
 
-export function addSheetsShop(shop: Partial<Shop>) {
+export function addSheetsShop(shop: Partial<Shop>, session: Session | null) {
   return request<{ ok: boolean; shop: Shop; credentials: { username: string; password: string } }>("addShop", {
     shop,
+    token: session?.token,
   });
 }
 
-export function deleteSheetsShop(shopId: string) {
+export function deleteSheetsShop(shopId: string, session: Session | null) {
   return request<{ ok: boolean; shop: Shop }>("deleteShop", {
     shopId,
+    token: session?.token,
   });
 }

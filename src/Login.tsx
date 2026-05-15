@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { authLogin } from "./sheetsApi";
+import type { Session } from "./types";
 
 interface LoginProps {
   title: string;
   expectedRole?: string;
   allowedRoles?: string[];
-  onLogin: (session: { role: string; shopId?: string }) => void;
+  onLogin: (session: Session) => void;
 }
 
 export default function Login({ title, expectedRole, allowedRoles, onLogin }: LoginProps) {
@@ -30,7 +31,7 @@ export default function Login({ title, expectedRole, allowedRoles, onLogin }: Lo
         if (!isAllowed) {
           setError(`You are not authorized to view this page.`);
         } else {
-          onLogin({ role, shopId: data.shopId });
+          onLogin({ role, shopId: data.shopId, token: data.token });
         }
       } else {
         setError((data as any).reason || "Login failed");
