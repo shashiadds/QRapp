@@ -522,6 +522,9 @@ function CustomerFlow({
             <CheckCircle2 size={42} />
             <span>You won</span>
             <strong>{formatPoints(reward ?? 0)}</strong>
+            <p style={{ marginTop: '0.5rem', color: '#6b7280' }}>
+              For your purchase of {formatPlainNumber(Number(billAmount))}
+            </p>
             <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151' }}>
               Thank you for shopping! Visit again.
             </p>
