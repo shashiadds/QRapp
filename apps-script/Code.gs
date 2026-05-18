@@ -796,6 +796,7 @@ function archiveOldTransactions() {
   }
 
   const headers = transactionsSheet.getRange(1, 1, 1, transactionsSheet.getLastColumn()).getValues()[0];
+  const archiveHeaders = archiveSheet.getRange(1, 1, 1, archiveSheet.getLastColumn()).getValues()[0];
   const timestampIndex = headers.indexOf("timestamp");
   const values = transactionsSheet.getRange(2, 1, lastRow - 1, transactionsSheet.getLastColumn()).getValues();
   const today = dateKey(new Date());
@@ -805,7 +806,10 @@ function archiveOldTransactions() {
   values.forEach((row, index) => {
     const timestamp = row[timestampIndex];
     if (timestamp && dateKey(timestamp) < today) {
-      rowsToArchive.push(HEADERS.transactionArchive.map((header) => row[headers.indexOf(header)]));
+      rowsToArchive.push(archiveHeaders.map((header) => {
+        const idx = headers.indexOf(header);
+        return idx !== -1 ? row[idx] : "";
+      }));
       rowNumbersToDelete.push(index + 2);
     }
   });
@@ -815,7 +819,7 @@ function archiveOldTransactions() {
   }
 
   archiveSheet
-    .getRange(archiveSheet.getLastRow() + 1, 1, rowsToArchive.length, HEADERS.transactionArchive.length)
+    .getRange(archiveSheet.getLastRow() + 1, 1, rowsToArchive.length, archiveHeaders.length)
     .setValues(rowsToArchive);
 
   deleteRowsByNumber(transactionsSheet, rowNumbersToDelete);
