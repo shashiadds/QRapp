@@ -626,6 +626,15 @@ function calculateRewardDetails(shop, billAmount) {
 function getShopRewardRules(shop) {
   const lookup = normalizeLookup(shop.id + " " + shop.name);
 
+  if (lookup.indexOf("sandeshagromachinery") !== -1) {
+    return [
+      { minBill: 0, maxBill: 2000, minPercent: 5, maxPercent: 7 },
+      { minBill: 2000, maxBill: 10000, minPercent: 5, maxPercent: 5 },
+      { minBill: 10000, maxBill: 50000, minPercent: 4, maxPercent: 4 },
+      { minBill: 50000, minPercent: 2, maxPercent: 3 },
+    ];
+  }
+
   if (lookup.indexOf("rahulagency") !== -1) {
     return [
       { minBill: 0, maxBill: 1000, minPercent: 10, maxPercent: 15 },
@@ -876,14 +885,15 @@ function ensureHeaders(sheetName, headers) {
     sheet = spreadsheet.insertSheet(sheetName);
   }
 
-  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), headers.length)).getValues()[0];
+  const lastCol = sheet.getLastColumn();
+  const currentHeaders = lastCol > 0 ? sheet.getRange(1, 1, 1, Math.max(lastCol, headers.length)).getValues()[0] : [];
   const missingHeaders = headers.filter((header) => currentHeaders.indexOf(header) === -1);
 
   if (!missingHeaders.length) {
     return;
   }
 
-  const nextColumn = currentHeaders.filter((header) => header !== "").length + 1;
+  const nextColumn = lastCol + 1;
   sheet.getRange(1, nextColumn, 1, missingHeaders.length).setValues([missingHeaders]);
 }
 
