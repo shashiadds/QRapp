@@ -126,9 +126,11 @@ main {
 .customer-panel {
   background: var(--card-bg);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 3px solid var(--accent-primary);
   border-radius: 16px;
   backdrop-filter: blur(12px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   margin: 0 auto;
   max-width: 430px;
   overflow: hidden;
@@ -326,9 +328,24 @@ label {
   background: var(--card-bg);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 3px solid var(--accent-secondary);
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.metric:hover,
+.surface:hover,
+.customer-panel:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.metric:nth-child(1) { border-top-color: var(--accent-primary); }
+.metric:nth-child(2) { border-top-color: var(--accent-secondary); }
+.metric:nth-child(3) { border-top-color: var(--accent-success); }
+.metric:nth-child(4) { border-top-color: var(--accent-warning); }
 
 .metric {
   display: grid;
