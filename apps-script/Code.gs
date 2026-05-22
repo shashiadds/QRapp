@@ -626,6 +626,14 @@ function calculateRewardDetails(shop, billAmount) {
 function getShopRewardRules(shop) {
   const lookup = normalizeLookup(shop.id + " " + shop.name);
 
+  if (lookup.indexOf("srujankidshouse") !== -1) {
+    return [
+      { minBill: 0, maxBill: 2000, minPercent: 5, maxPercent: 10 },
+      { minBill: 2000, maxBill: 5000, minPercent: 5, maxPercent: 7 },
+      { minBill: 5000, minPercent: 5, maxPercent: 5 },
+    ];
+  }
+
   if (lookup.indexOf("sandeshagromachinery") !== -1) {
     return [
       { minBill: 0, maxBill: 2000, minPercent: 5, maxPercent: 7 },

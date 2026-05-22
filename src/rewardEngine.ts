@@ -64,6 +64,14 @@ function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculati
 function getShopRewardRules(shop: Shop) {
   const lookup = normalizeLookup(`${shop.id} ${shop.name}`);
 
+  if (lookup.includes("srujankidshouse")) {
+    return [
+      { minBill: 0, maxBill: 2000, minPercent: 5, maxPercent: 10 },
+      { minBill: 2000, maxBill: 5000, minPercent: 5, maxPercent: 7 },
+      { minBill: 5000, minPercent: 5, maxPercent: 5 },
+    ];
+  }
+
   if (lookup.includes("rahulagency")) {
     return [
       { minBill: 0, maxBill: 1000, minPercent: 10, maxPercent: 15 },
