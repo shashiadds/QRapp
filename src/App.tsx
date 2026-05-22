@@ -616,8 +616,15 @@ function ShopDashboard({
             <p className="muted-note">QR downloads are disabled because this shop is not active.</p>
           )}
         </section>
-
-        <TransactionTable transactions={shopTransactions} compact />
+        
+        {/* Placeholder for future widgets in two-column grid */}
+        <section className="surface" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p className="muted-note">More shop insights coming soon.</p>
+        </section>
+      </div>
+      
+      <div style={{ marginTop: '1.5rem' }}>
+        <TransactionTable transactions={shopTransactions} hideShopFilter />
       </div>
     </section>
   );
@@ -1002,10 +1009,12 @@ function TransactionTable({
   transactions,
   shops = [],
   compact = false,
+  hideShopFilter = false,
 }: {
   transactions: Transaction[];
   shops?: Shop[];
   compact?: boolean;
+  hideShopFilter?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [shopFilter, setShopFilter] = useState("all");
@@ -1109,15 +1118,17 @@ function TransactionTable({
               placeholder="Mobile, name, shop, location"
             />
           </label>
-          <label>
-            Shop
-            <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
-              <option value="all">All shops</option>
-              {shops.map((shop) => (
-                <option value={shop.id} key={shop.id}>{shop.name}</option>
-              ))}
-            </select>
-          </label>
+          {!hideShopFilter && (
+            <label>
+              Shop
+              <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
+                <option value="all">All shops</option>
+                {shops.map((shop) => (
+                  <option value={shop.id} key={shop.id}>{shop.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             Status
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
