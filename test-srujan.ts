@@ -24,7 +24,7 @@ function testReward(billAmount: number) {
 
 function getExpectedRange(billAmount: number) {
     // With the new probability rules, for any bill, the percentage can be:
-    // - 5-10% (90% chance)
+    // - 5-7% (90% chance)
     // - 7-8% (7% chance)
     // - 10% (3% chance)
     // Thus the absolute min is 5% and absolute max is 10%.
