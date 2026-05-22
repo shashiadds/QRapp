@@ -642,9 +642,9 @@ function getShopRewardRules(shop) {
 
   if (lookup.indexOf("srujankidshouse") !== -1) {
     return [
-      { minBill: 0, maxBill: 2000, minPercent: 5, maxPercent: 10 },
-      { minBill: 2000, maxBill: 5000, minPercent: 5, maxPercent: 7 },
-      { minBill: 5000, minPercent: 5, maxPercent: 5 },
+      { minBill: 100, minPercent: 5, maxPercent: 10, probability: 90 },
+      { minBill: 100, minPercent: 7, maxPercent: 8, probability: 7 },
+      { minBill: 100, minPercent: 10, maxPercent: 10, probability: 3 },
     ];
   }
 
@@ -681,7 +681,7 @@ function getDefaultRewardRules() {
 }
 
 function findPercentRewardRule(shop, billAmount) {
-  return getShopRewardRules(shop).find((rule) => {
+  const matchingRules = getShopRewardRules(shop).filter((rule) => {
     return (
       Number.isFinite(Number(rule.minPercent)) &&
       Number.isFinite(Number(rule.maxPercent)) &&
@@ -689,6 +689,21 @@ function findPercentRewardRule(shop, billAmount) {
       (!Number.isFinite(Number(rule.maxBill)) || billAmount <= Number(rule.maxBill))
     );
   });
+
+  if (!matchingRules.length) return undefined;
+
+  const hasProbability = matchingRules.some((r) => r.probability !== undefined && Number.isFinite(Number(r.probability)));
+  if (!hasProbability) return matchingRules[0];
+
+  const totalProbability = matchingRules.reduce((sum, r) => sum + (Number.isFinite(Number(r.probability)) ? Number(r.probability) : 0), 0);
+  const roll = Math.random() * totalProbability;
+  let cursor = 0;
+  for (let i = 0; i < matchingRules.length; i++) {
+    const rule = matchingRules[i];
+    cursor += Number.isFinite(Number(rule.probability)) ? Number(rule.probability) : 0;
+    if (roll <= cursor) return rule;
+  }
+  return matchingRules[0];
 }
 
 function randomBetween(min, max) {
