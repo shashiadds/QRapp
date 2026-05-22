@@ -624,6 +624,10 @@ function ShopDashboard({
       </div>
       
       <div style={{ marginTop: '1.5rem' }}>
+        <AdminReports transactions={shopTransactions} shops={[shop]} hideShopFilter />
+      </div>
+      
+      <div style={{ marginTop: '1.5rem' }}>
         <TransactionTable transactions={shopTransactions} hideShopFilter />
       </div>
     </section>
@@ -820,7 +824,7 @@ function AdminDashboard({
   );
 }
 
-function AdminReports({ transactions, shops }: { transactions: Transaction[], shops: Shop[] }) {
+function AdminReports({ transactions, shops, hideShopFilter = false }: { transactions: Transaction[], shops: Shop[], hideShopFilter?: boolean }) {
   const [shopFilter, setShopFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -899,15 +903,17 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
         </button>
       </div>
       <div className="filter-bar">
-        <label>
-          Shop
-          <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
-            <option value="all">All shops</option>
-            {shops.map((shop) => (
-              <option value={shop.id} key={shop.id}>{shop.name}</option>
-            ))}
-          </select>
-        </label>
+        {!hideShopFilter && (
+          <label>
+            Shop
+            <select value={shopFilter} onChange={(e) => setShopFilter(e.target.value)}>
+              <option value="all">All shops</option>
+              {shops.map((shop) => (
+                <option value={shop.id} key={shop.id}>{shop.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           From
           <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -945,7 +951,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
           <thead>
             <tr>
               <th>Date</th>
-              <th>Shop</th>
+              {!hideShopFilter && <th>Shop</th>}
               <th>Purchases</th>
               <th>Total Purchase</th>
               <th>Total Points</th>
@@ -958,7 +964,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
               return (
                 <tr key={`${row.date}-${row.shopId}-${idx}`}>
                   <td>{row.date}</td>
-                  <td>{shopName}</td>
+                  {!hideShopFilter && <td>{shopName}</td>}
                   <td>{row.billCount}</td>
                   <td>{formatPlainNumber(row.totalBills)}</td>
                   <td>{formatPlainNumber(row.totalPoints)}</td>
@@ -967,7 +973,7 @@ function AdminReports({ transactions, shops }: { transactions: Transaction[], sh
             })}
             {filteredSummary.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions match these filters.</td>
+                <td colSpan={hideShopFilter ? 4 : 5} style={{ textAlign: "center", padding: "1rem" }}>No approved transactions match these filters.</td>
               </tr>
             )}
           </tbody>
