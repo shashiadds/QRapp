@@ -394,7 +394,8 @@ function CustomerFlow({
   const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
 
   useEffect(() => {
-    loadVisitorContext().then(setVisitorContext);
+    // Fetch IP and location in the background while the customer fills the form
+    loadVisitorContext({ includeDeviceLocation: true }).then(setVisitorContext);
   }, []);
 
   const handleSubmit = () => {
@@ -402,11 +403,6 @@ function CustomerFlow({
     setMessage("");
 
     window.setTimeout(async () => {
-      const latestVisitorContext = await loadVisitorContext({ includeDeviceLocation: true }).catch(
-        () => visitorContext
-      );
-      setVisitorContext(latestVisitorContext);
-
       const result = isSheetsConfigured
         ? await submitSheetsReward(
             shop.id,
@@ -414,7 +410,7 @@ function CustomerFlow({
             address.trim(),
             mobile.trim(),
             Number(billAmount),
-            latestVisitorContext
+            visitorContext
           ).catch((error) => ({
             ok: false as const,
             reason: error instanceof Error ? error.message : "Could not save reward.",
@@ -426,7 +422,7 @@ function CustomerFlow({
             mobile.trim(),
             Number(billAmount),
             transactions,
-            latestVisitorContext
+            visitorContext
           );
 
       if (!result.ok) {
