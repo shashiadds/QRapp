@@ -576,14 +576,28 @@ function calculateReward(shop, billAmount) {
 }
 
 function calculateRewardDetails(shop, billAmount) {
-  const percentRule = findPercentRewardRule(shop, billAmount);
+  const rules = getShopRewardRules(shop);
+  let highestMaxBill = 0;
+  for (let i = 0; i < rules.length; i++) {
+    const r = rules[i];
+    if (Number.isFinite(Number(r.maxBill)) && Number(r.maxBill) > highestMaxBill) {
+      highestMaxBill = Number(r.maxBill);
+    }
+  }
+
+  let effectiveBillAmount = billAmount;
+  if (highestMaxBill > 0 && billAmount > highestMaxBill) {
+    effectiveBillAmount = highestMaxBill;
+  }
+
+  const percentRule = findPercentRewardRule(shop, effectiveBillAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    const rawPoints = (billAmount * percent) / 100;
+    const rawPoints = (effectiveBillAmount * percent) / 100;
     const roundedPoints = roundRewardAmount(rawPoints);
     return finalizePoints(roundedPoints, shop, billAmount, {
       rule: "percentage-slab",
-      details: percent.toFixed(2) + "% of " + billAmount + ", rounded from " + rawPoints.toFixed(2) + " to " + roundedPoints,
+      details: percent.toFixed(2) + "% of " + effectiveBillAmount + " (capped from " + billAmount + "), rounded from " + rawPoints.toFixed(2) + " to " + roundedPoints,
     });
   }
 

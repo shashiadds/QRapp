@@ -16,14 +16,27 @@ export function calculateReward(shop: Shop, billAmount: number): number {
 }
 
 function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculation {
-  const percentRule = findPercentRewardRule(shop, billAmount);
+  const rules = getShopRewardRules(shop);
+  let highestMaxBill = 0;
+  for (const rule of rules) {
+    if (Number.isFinite(rule.maxBill) && rule.maxBill! > highestMaxBill) {
+      highestMaxBill = rule.maxBill!;
+    }
+  }
+
+  let effectiveBillAmount = billAmount;
+  if (highestMaxBill > 0 && billAmount > highestMaxBill) {
+    effectiveBillAmount = highestMaxBill;
+  }
+
+  const percentRule = findPercentRewardRule(shop, effectiveBillAmount);
   if (percentRule) {
     const percent = randomBetween(percentRule.minPercent, percentRule.maxPercent);
-    const rawPoints = (billAmount * percent) / 100;
+    const rawPoints = (effectiveBillAmount * percent) / 100;
     const roundedPoints = roundRewardAmount(rawPoints);
     return finalizePoints(roundedPoints, shop, billAmount, {
       rule: "percentage-slab",
-      details: `${percent.toFixed(2)}% of ${billAmount}, rounded from ${rawPoints.toFixed(2)} to ${roundedPoints}`,
+      details: `${percent.toFixed(2)}% of ${effectiveBillAmount} (capped from ${billAmount}), rounded from ${rawPoints.toFixed(2)} to ${roundedPoints}`,
     });
   }
 
