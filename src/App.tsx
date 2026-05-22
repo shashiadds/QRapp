@@ -1028,6 +1028,16 @@ function TransactionTable({
     return new Map(shops.map((shop) => [shop.id, shop.name]));
   }, [shops]);
 
+  const visitsByMobile = useMemo(() => {
+    const counts = new Map<string, number>();
+    transactions.forEach((t) => {
+      if (t.status === "approved") {
+        counts.set(t.mobile, (counts.get(t.mobile) || 0) + 1);
+      }
+    });
+    return counts;
+  }, [transactions]);
+
   const filteredTransactions = useMemo(() => {
     if (compact) return transactions.slice(0, 6);
 
@@ -1082,7 +1092,7 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Points", "Point Rule", "Point Details", "Status", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Points", "Point Rule", "Point Details", "Visits", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
               formatTransactionDate(tx.timestamp),
               formatTransactionTime(tx.timestamp),
@@ -1094,7 +1104,7 @@ function TransactionTable({
               tx.reward,
               tx.rewardRule || "",
               tx.rewardDetails || "",
-              tx.status,
+              visitsByMobile.get(tx.mobile) || 1,
               tx.timestamp,
               tx.ipAddress,
               tx.location,
@@ -1185,7 +1195,7 @@ function TransactionTable({
               {!compact && <th>Shop</th>}
               <th>Purchase</th>
               <th>Points</th>
-              <th>Status</th>
+              <th>Visits</th>
             </tr>
           </thead>
           <tbody>
@@ -1198,9 +1208,7 @@ function TransactionTable({
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
                 <td>{formatPlainNumber(transaction.billAmount)}</td>
                 <td>{formatPlainNumber(transaction.reward)}</td>
-                <td>
-                  <span className={`status ${transaction.status}`}>{transaction.status}</span>
-                </td>
+                <td>{visitsByMobile.get(transaction.mobile) || 1}</td>
               </tr>
             ))}
             {visibleTransactions.length === 0 && (
