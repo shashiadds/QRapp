@@ -34,9 +34,9 @@ This shop uses tiered percentages based on the total purchase amount.
 
 For all other active shops without explicit customizations, the following default discount tiers apply based on the bill total:
 
-* **₹100 - ₹500:** 8% - 15% Cashback
+* **₹100 - ₹500:** 6% - 10% Cashback
 * **₹500 - ₹1,000:** 5% - 10% Cashback
-* **₹1,000 - ₹2,000:** 7% - 15% Cashback
+* **₹1,000 - ₹2,000:** 7% - 12% Cashback
 * **₹2,000 - ₹3,500:** 5% - 10% Cashback
 * **₹3,500 - ₹6,000:** 5% - 8% Cashback
 * **₹6,000 - ₹10,000:** 4% - 6% Cashback

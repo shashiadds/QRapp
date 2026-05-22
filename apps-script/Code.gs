@@ -671,9 +671,9 @@ function getShopRewardRules(shop) {
 
 function getDefaultRewardRules() {
   return [
-    { minBill: 100, maxBill: 500, minPercent: 8, maxPercent: 15 },
+    { minBill: 100, maxBill: 500, minPercent: 6, maxPercent: 10 },
     { minBill: 500, maxBill: 1000, minPercent: 5, maxPercent: 10 },
-    { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 15 },
+    { minBill: 1000, maxBill: 2000, minPercent: 7, maxPercent: 12 },
     { minBill: 2000, maxBill: 3500, minPercent: 5, maxPercent: 10 },
     { minBill: 3500, maxBill: 6000, minPercent: 5, maxPercent: 8 },
     { minBill: 6000, maxBill: 10000, minPercent: 4, maxPercent: 6 },
