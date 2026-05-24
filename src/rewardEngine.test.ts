@@ -367,6 +367,20 @@ describe("submitReward", () => {
     ).toEqual({ ok: false, reason: "Purchase total must be at least 10." });
   });
 
+  it("rejects bills above the shop maximum without creating a transaction", () => {
+    const result = submitReward(
+      shop({ maxBillAmount: 500 }),
+      "Neha Patil",
+      "Pune",
+      "9876543210",
+      501,
+      [],
+      visitorContext
+    );
+
+    expect(result).toEqual({ ok: false, reason: "Invalid amount." });
+  });
+
   it("allows the same mobile to receive multiple rewards at the same shop today", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
 

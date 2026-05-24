@@ -707,6 +707,7 @@ function AdminDashboard({
   const [isAddingShop, setIsAddingShop] = useState(false);
   const [newShopName, setNewShopName] = useState("");
   const [newShopCategory, setNewShopCategory] = useState("General");
+  const [newShopMaxBillAmount, setNewShopMaxBillAmount] = useState("100000");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingShopId, setDeletingShopId] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
@@ -727,12 +728,16 @@ function AdminDashboard({
     setIsSubmitting(true);
     try {
       if (isSheetsConfigured) {
-        const result = await addSheetsShop({ name: newShopName, category: newShopCategory }, session);
+        const result = await addSheetsShop(
+          { name: newShopName, category: newShopCategory, maxBillAmount: Number(newShopMaxBillAmount) },
+          session
+        );
         if (result.ok) {
           setShops([...shops, result.shop]);
           setCreatedCredentials(result.credentials);
           setNewShopName("");
           setNewShopCategory("General");
+          setNewShopMaxBillAmount("100000");
         } else {
           alert("Failed to create shop.");
         }
@@ -818,6 +823,16 @@ function AdminDashboard({
               <label>
                 Category
                 <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
+              </label>
+              <label>
+                Max Bill Amount
+                <input
+                  type="number"
+                  min="10"
+                  value={newShopMaxBillAmount}
+                  onChange={(e) => setNewShopMaxBillAmount(e.target.value)}
+                  required
+                />
               </label>
               <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
                 {isSubmitting ? "Creating..." : "Create Shop"}

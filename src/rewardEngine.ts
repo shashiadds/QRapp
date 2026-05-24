@@ -3,6 +3,20 @@ import CUSTOM_SHOP_RULES from "./customRules.json";
 
 const MIN_POINTS = 10;
 const MAX_POINTS = 1000;
+const DEFAULT_MAX_BILL_AMOUNT = 100000;
+const SHOP_MAX_BILL_AMOUNTS: Record<string, number> = {
+  kalemedical: 10000,
+  srujankidshouse119: 20000,
+  srujankidshouse: 20000,
+  ganeshelectrical947: 20000,
+  ganeshelectrical: 20000,
+  "गणेशइलेक्ट्रिकल330": 20000,
+  "गणेशइलेक्ट्रिकल": 20000,
+  sandeshagromachinery910: 90000,
+  sandeshagromachinery: 90000,
+  rahulagency363: 60000,
+  rahulagency: 60000,
+};
 
 const makeId = () => `TRX-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -195,6 +209,21 @@ function normalizeLookup(value: string) {
   return value.replace(/\s+/g, "").toLowerCase();
 }
 
+export function getMaxBillAmount(shop: Shop) {
+  if (Number.isFinite(shop.maxBillAmount) && Number(shop.maxBillAmount) > 0) {
+    return Number(shop.maxBillAmount);
+  }
+
+  const lookup = normalizeLookup(`${shop.id} ${shop.name}`);
+  for (const [key, amount] of Object.entries(SHOP_MAX_BILL_AMOUNTS)) {
+    if (lookup.includes(key)) {
+      return amount;
+    }
+  }
+
+  return DEFAULT_MAX_BILL_AMOUNT;
+}
+
 export function submitReward(
   shop: Shop,
   customerName: string,
@@ -222,6 +251,10 @@ export function submitReward(
 
   if (!Number.isFinite(billAmount) || billAmount < 10) {
     return { ok: false, reason: "Purchase total must be at least 10." };
+  }
+
+  if (billAmount > getMaxBillAmount(shop)) {
+    return { ok: false, reason: "Invalid amount." };
   }
 
   const rewardCalculation = calculateRewardDetails(shop, billAmount);

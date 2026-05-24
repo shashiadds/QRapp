@@ -7,6 +7,7 @@ export const shops: Shop[] = [
     category: "Medical Store",
     status: "active",
     maxReward: 600,
+    maxBillAmount: 10000,
     costPerScan: 10,
     rewardBands: [
       { minBill: 50, maxBill: 500, minPercent: 8, maxPercent: 15 },
@@ -23,6 +24,7 @@ export const shops: Shop[] = [
     category: "Kirana Shop",
     status: "active",
     maxReward: 100,
+    maxBillAmount: 100000,
     costPerScan: 8,
     rewardBands: [
       { reward: 10, probability: 75 },
@@ -37,6 +39,7 @@ export const shops: Shop[] = [
     category: "Retail",
     status: "paused",
     maxReward: 50,
+    maxBillAmount: 100000,
     costPerScan: 6,
     rewardBands: [
       { reward: 10, probability: 85 },

@@ -15,6 +15,7 @@ export type Shop = {
   category: string;
   status: ShopStatus;
   maxReward: number;
+  maxBillAmount?: number;
   costPerScan: number;
   rewardBands: RewardBand[];
 };

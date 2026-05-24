@@ -9,9 +9,23 @@ const SHEETS = {
 
 const MIN_POINTS = 10;
 const MAX_POINTS = 1000;
+const DEFAULT_MAX_BILL_AMOUNT = 100000;
+const SHOP_MAX_BILL_AMOUNTS = {
+  kalemedical: 10000,
+  srujankidshouse119: 20000,
+  srujankidshouse: 20000,
+  ganeshelectrical947: 20000,
+  ganeshelectrical: 20000,
+  "गणेशइलेक्ट्रिकल330": 20000,
+  "गणेशइलेक्ट्रिकल": 20000,
+  sandeshagromachinery910: 90000,
+  sandeshagromachinery: 90000,
+  rahulagency363: 60000,
+  rahulagency: 60000,
+};
 
 const HEADERS = {
-  shops: ["id", "name", "category", "status", "maxReward", "costPerScan", "rewardBands"],
+  shops: ["id", "name", "category", "status", "maxReward", "maxBillAmount", "costPerScan", "rewardBands"],
   transactions: [
     "id",
     "mobile",
@@ -58,6 +72,7 @@ const SEED_SHOPS = [
     "Medical Store",
     "active",
     600,
+    10000,
     10,
     JSON.stringify([
       { minBill: 50, maxBill: 500, minPercent: 8, maxPercent: 15 },
@@ -74,6 +89,7 @@ const SEED_SHOPS = [
     "Kirana Shop",
     "active",
     100,
+    100000,
     8,
     JSON.stringify([
       { reward: 10, probability: 75 },
@@ -215,6 +231,26 @@ function doPost(event) {
 // Admin authentication logic
 function normalizeLookup(value) {
   return String(value || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function resolveMaxBillAmount(shopId, shopName, configuredAmount) {
+  const amount = Number(configuredAmount);
+  if (Number.isFinite(amount) && amount > 0) {
+    return amount;
+  }
+
+  const lookup = normalizeLookup(String(shopId || "") + " " + String(shopName || ""));
+  for (const key in SHOP_MAX_BILL_AMOUNTS) {
+    if (lookup.indexOf(key) !== -1) {
+      return SHOP_MAX_BILL_AMOUNTS[key];
+    }
+  }
+
+  return DEFAULT_MAX_BILL_AMOUNT;
+}
+
+function getMaxBillAmount(shop) {
+  return resolveMaxBillAmount(shop.id, shop.name, shop.maxBillAmount);
 }
 
 function findShopForLogin(value, shops) {
@@ -468,6 +504,7 @@ function addShop(shopData) {
     category: String(shopData.category || "General"),
     status: "active",
     maxReward: Number(shopData.maxReward || 100),
+    maxBillAmount: Number(shopData.maxBillAmount || DEFAULT_MAX_BILL_AMOUNT),
     costPerScan: Number(shopData.costPerScan || 10),
     rewardBands: JSON.stringify([
       { reward: 10, probability: 80 },
@@ -547,6 +584,10 @@ function submitReward(
 
   if (!Number.isFinite(billAmount) || billAmount < 10) {
     return { ok: false, reason: "Purchase total must be at least 10." };
+  }
+
+  if (billAmount > getMaxBillAmount(shop)) {
+    return { ok: false, reason: "Invalid amount." };
   }
 
   const rewardCalculation = calculateRewardDetails(shop, billAmount);
@@ -860,6 +901,7 @@ function readShops() {
       category: String(row.category),
       status: String(row.status),
       maxReward: maxReward,
+      maxBillAmount: resolveMaxBillAmount(id, String(row.name), row.maxBillAmount),
       costPerScan: Number(row.costPerScan),
       rewardBands: JSON.parse(row.rewardBands || "[]"),
     };
