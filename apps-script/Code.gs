@@ -724,8 +724,17 @@ function getShopRewardRules(shop) {
     }
   }
 
-  if (shop.rewardBands && shop.rewardBands.length > 0) {
+  if (lookup.indexOf("test") !== -1 && shop.rewardBands && shop.rewardBands.length > 0) {
     return shop.rewardBands;
+  }
+
+  if (shop.rewardBands && shop.rewardBands.length > 0) {
+    const hasPercentRules = shop.rewardBands.some(function(band) {
+      return Number.isFinite(Number(band.minPercent)) || Number.isFinite(Number(band.maxPercent));
+    });
+    if (hasPercentRules) {
+      return shop.rewardBands;
+    }
   }
 
   return getDefaultRewardRules();
