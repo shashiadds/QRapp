@@ -805,15 +805,22 @@ function finalizePoints(amount, shop, billAmount, source) {
 }
 
 function readShops() {
-  return readObjects(SHEETS.shops).map((row) => ({
-    id: String(row.id),
-    name: String(row.name),
-    category: String(row.category),
-    status: String(row.status),
-    maxReward: Number(row.maxReward),
-    costPerScan: Number(row.costPerScan),
-    rewardBands: JSON.parse(row.rewardBands || "[]"),
-  }));
+  return readObjects(SHEETS.shops).map((row) => {
+    const id = String(row.id);
+    let maxReward = Number(row.maxReward);
+    if (normalizeLookup(id).indexOf("srujankidshouse") !== -1 && (maxReward === 100 || !maxReward)) {
+      maxReward = 1000;
+    }
+    return {
+      id: id,
+      name: String(row.name),
+      category: String(row.category),
+      status: String(row.status),
+      maxReward: maxReward,
+      costPerScan: Number(row.costPerScan),
+      rewardBands: JSON.parse(row.rewardBands || "[]"),
+    };
+  });
 }
 
 function readPublicShops() {
