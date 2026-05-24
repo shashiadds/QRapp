@@ -203,7 +203,11 @@ function App() {
         setHasLoadedArchive(true);
       })
       .catch((error) => {
-        setDataStatus(error instanceof Error ? error.message : "Google Sheets connection failed");
+        const errorMessage = error instanceof Error ? error.message : "Google Sheets connection failed";
+        setDataStatus(errorMessage);
+        if (errorMessage === "Session expired." || errorMessage === "Invalid session.") {
+          setSession(null);
+        }
       });
   }, [hasLoadedArchive, session]);
 
