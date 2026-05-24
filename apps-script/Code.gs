@@ -7,6 +7,14 @@ const SHEETS = {
   sessions: "sessions",
 };
 
+const TRANSACTION_HISTORY_SHEETS = [
+  "transactions_archive",
+  "transaction_history",
+  "Transaction History",
+  "transaction history",
+  "transactions history",
+];
+
 const MIN_POINTS = 10;
 const MAX_POINTS = 1000;
 const DEFAULT_MAX_BILL_AMOUNT = 100000;
@@ -977,7 +985,11 @@ function readTransactionObjects(includeArchive) {
     return currentTransactions;
   }
 
-  return readObjects(SHEETS.transactionArchive).concat(currentTransactions);
+  const archiveRows = TRANSACTION_HISTORY_SHEETS.reduce((rows, sheetName) => {
+    return rows.concat(readObjects(sheetName));
+  }, []);
+
+  return archiveRows.concat(currentTransactions);
 }
 
 function readFraudSignals() {
