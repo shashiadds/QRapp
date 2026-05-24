@@ -9,10 +9,6 @@ const SHEETS = {
 
 const TRANSACTION_HISTORY_SHEETS = [
   "transactions_archive",
-  "transaction_history",
-  "Transaction History",
-  "transaction history",
-  "transactions history",
 ];
 
 const MIN_POINTS = 10;
@@ -963,7 +959,9 @@ function lookupCustomer(mobile) {
   }
 
   const transactions = readTransactions(true).filter((transaction) => {
-    return transaction.status === "approved" && transaction.mobile === targetMobile;
+    const transactionMobile = String(transaction.mobile || "").replace(/\D/g, "");
+    const status = normalizeLookup(transaction.status);
+    return transactionMobile === targetMobile && (!status || status === "approved");
   });
 
   if (!transactions.length) {
