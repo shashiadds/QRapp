@@ -3,7 +3,6 @@ import Login from "./Login";
 import QRCode from "qrcode";
 import {
   Activity,
-  AlertTriangle,
   BarChart3,
   CheckCircle2,
   Download,
@@ -650,7 +649,6 @@ function ShopDashboard({
           { label: "Total scans", value: shopTransactions.length.toString(), icon: ScanLine },
           { label: "Mudra given", value: formatPoints(totalPoints), icon: Trophy },
           { label: "Average purchase", value: formatPlainNumber(averageBill), icon: BarChart3 },
-          { label: "Cost per scan", value: formatPoints(shop.costPerScan), icon: Activity },
         ]}
       />
 
@@ -795,111 +793,89 @@ function AdminDashboard({
         ]}
       />
 
-      <div className="two-column admin-grid">
-        <section className="surface">
-          <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Store size={20} />
-              <h2>Shop management</h2>
-            </div>
-            <button 
-              className="secondary-action" 
-              style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
-              onClick={() => { setIsAddingShop(!isAddingShop); setCreatedCredentials(null); }}
-            >
-              {isAddingShop ? "Cancel" : "Add Shop"}
-            </button>
+      <section className="surface" style={{ marginBottom: "18px" }}>
+        <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Store size={20} />
+            <h2>Shop management</h2>
           </div>
+          <button 
+            className="secondary-action" 
+            style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+            onClick={() => { setIsAddingShop(!isAddingShop); setCreatedCredentials(null); }}
+          >
+            {isAddingShop ? "Cancel" : "Add Shop"}
+          </button>
+        </div>
 
-          {isAddingShop && (
-            <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
-              <form onSubmit={handleAddShop}>
-                <label>
-                  Shop Name
-                  <input value={newShopName} onChange={(e) => setNewShopName(e.target.value)} required />
-                </label>
-                <label>
-                  Category
-                  <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
-                </label>
-                <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
-                  {isSubmitting ? "Creating..." : "Create Shop"}
+        {isAddingShop && (
+          <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
+            <form onSubmit={handleAddShop}>
+              <label>
+                Shop Name
+                <input value={newShopName} onChange={(e) => setNewShopName(e.target.value)} required />
+              </label>
+              <label>
+                Category
+                <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
+              </label>
+              <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
+                {isSubmitting ? "Creating..." : "Create Shop"}
+              </button>
+            </form>
+            {createdCredentials && (
+              <div style={{ marginTop: "1rem", padding: "1rem", background: "#e6ffe6", border: "1px solid #00cc00", borderRadius: "8px", color: "#006600" }}>
+                <strong>Shop created successfully!</strong>
+                <p>Give these credentials to the shop owner:</p>
+                <code>Username: {createdCredentials.username}</code><br/>
+                <code>Password: {createdCredentials.password}</code>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="shop-list">
+          {shops.map((shop) => (
+            <div className="shop-row" key={shop.id}>
+              <div>
+                <strong>{shop.name}</strong>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                  <span className="muted-note" style={{ fontSize: '12px' }}>{shop.category}</span>
+                  {getShopPassword(shop.id) && (
+                    <span className="shop-pass-badge" style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#fbbf24',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                      fontWeight: 600,
+                      border: '1px solid rgba(245, 158, 11, 0.2)'
+                    }}>
+                      <Key size={10} style={{ color: '#fbbf24' }} />
+                      Pass: {getShopPassword(shop.id)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="shop-row-actions">
+                <span className={`status ${shop.status}`}>{shop.status}</span>
+                <button
+                  className="icon-button danger-button"
+                  type="button"
+                  title={`Delete ${shop.name}`}
+                  disabled={shop.status === "deleted" || deletingShopId === shop.id}
+                  onClick={() => handleDeleteShop(shop)}
+                >
+                  <Trash2 size={17} />
                 </button>
-              </form>
-              {createdCredentials && (
-                <div style={{ marginTop: "1rem", padding: "1rem", background: "#e6ffe6", border: "1px solid #00cc00", borderRadius: "8px", color: "#006600" }}>
-                  <strong>Shop created successfully!</strong>
-                  <p>Give these credentials to the shop owner:</p>
-                  <code>Username: {createdCredentials.username}</code><br/>
-                  <code>Password: {createdCredentials.password}</code>
-                </div>
-              )}
+              </div>
             </div>
-          )}
-
-          <div className="shop-list">
-            {shops.map((shop) => (
-              <div className="shop-row" key={shop.id}>
-                <div>
-                  <strong>{shop.name}</strong>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
-                    <span className="muted-note" style={{ fontSize: '12px' }}>{shop.category}</span>
-                    {getShopPassword(shop.id) && (
-                      <span className="shop-pass-badge" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '11px',
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        color: '#fbbf24',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        fontWeight: 600,
-                        border: '1px solid rgba(245, 158, 11, 0.2)'
-                      }}>
-                        <Key size={10} style={{ color: '#fbbf24' }} />
-                        Pass: {getShopPassword(shop.id)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="shop-row-actions">
-                  <span className={`status ${shop.status}`}>{shop.status}</span>
-                  <button
-                    className="icon-button danger-button"
-                    type="button"
-                    title={`Delete ${shop.name}`}
-                    disabled={shop.status === "deleted" || deletingShopId === shop.id}
-                    onClick={() => handleDeleteShop(shop)}
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="surface">
-          <div className="section-title">
-            <AlertTriangle size={20} />
-            <h2>Fraud monitoring</h2>
-          </div>
-          <div className="shop-list">
-            {fraudSignals.map((signal) => (
-              <div className="shop-row" key={`${signal.shopId}-${signal.mobile}`}>
-                <div>
-                  <strong>{signal.mobile}</strong>
-                  <span>
-                    {signal.shopId} · {signal.attempts} attempts
-                  </span>
-                </div>
-                <span className={`status ${signal.status}`}>{signal.status}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
+          ))}
+        </div>
+      </section>
 
       <AdminReports transactions={transactions} shops={shops} />
 
