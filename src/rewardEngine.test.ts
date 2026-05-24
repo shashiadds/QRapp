@@ -172,6 +172,46 @@ describe("calculateReward", () => {
     expect(reward).toBe(60);
   });
 
+  it("defaults falsy or zero maxReward to global limit (1000) instead of capping at 10", () => {
+    vi.spyOn(Math, "random").mockReturnValue(1);
+
+    const reward = calculateReward(
+      shop({
+        maxReward: 0,
+        rewardBands: [],
+      }),
+      1000
+    );
+
+    expect(reward).toBe(100);
+  });
+
+  it("applies safety fallback maxReward of 600 for Kale Medical when set to 100 or 0", () => {
+    vi.spyOn(Math, "random").mockReturnValue(1);
+
+    const rewardWith100 = calculateReward(
+      shop({
+        id: "kalemedical",
+        name: "Kale Medical",
+        maxReward: 100,
+        rewardBands: [],
+      }),
+      10000
+    );
+    expect(rewardWith100).toBe(600);
+
+    const rewardWith0 = calculateReward(
+      shop({
+        id: "kalemedical",
+        name: "Kale Medical",
+        maxReward: 0,
+        rewardBands: [],
+      }),
+      10000
+    );
+    expect(rewardWith0).toBe(600);
+  });
+
   it("caps percent rewards at the global 1000 points limit", () => {
     vi.spyOn(Math, "random").mockReturnValue(1);
 

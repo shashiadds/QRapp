@@ -146,7 +146,22 @@ function roundRewardAmount(amount: number) {
 }
 
 function clampPoints(amount: number, shop: Shop) {
-  const shopLimit = Number.isFinite(shop.maxReward) ? shop.maxReward : MAX_POINTS;
+  let shopLimit = Number.isFinite(shop.maxReward) && shop.maxReward > 0 ? shop.maxReward : MAX_POINTS;
+
+  // Custom high-value shops should default to their correct maxReward safety cap instead of 100 or falsy/0
+  const lookup = normalizeLookup(shop.id);
+  if (shopLimit === 100 || !shop.maxReward) {
+    if (
+      lookup.includes("srujankidshouse") ||
+      lookup.includes("sandeshagro") ||
+      lookup.includes("rahulagency")
+    ) {
+      shopLimit = 1000;
+    } else if (lookup.includes("kalemedical")) {
+      shopLimit = 600;
+    }
+  }
+
   return Math.max(MIN_POINTS, Math.min(amount, shopLimit, MAX_POINTS));
 }
 

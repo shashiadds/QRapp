@@ -788,7 +788,22 @@ function roundRewardAmount(amount) {
 }
 
 function clampPoints(amount, shop) {
-  const shopLimit = Number.isFinite(Number(shop.maxReward)) ? Number(shop.maxReward) : MAX_POINTS;
+  let shopLimit = Number.isFinite(Number(shop.maxReward)) && Number(shop.maxReward) > 0 ? Number(shop.maxReward) : MAX_POINTS;
+
+  // Custom high-value shops should default to their correct maxReward safety cap instead of 100 or falsy/0
+  const lookup = normalizeLookup(shop.id);
+  if (shopLimit === 100 || !shop.maxReward) {
+    if (
+      lookup.indexOf("srujankidshouse") !== -1 ||
+      lookup.indexOf("sandeshagro") !== -1 ||
+      lookup.indexOf("rahulagency") !== -1
+    ) {
+      shopLimit = 1000;
+    } else if (lookup.indexOf("kalemedical") !== -1) {
+      shopLimit = 600;
+    }
+  }
+
   return Math.max(MIN_POINTS, Math.min(Number(amount), shopLimit, MAX_POINTS));
 }
 
@@ -817,9 +832,28 @@ function readShops() {
   return readObjects(SHEETS.shops).map((row) => {
     const id = String(row.id);
     let maxReward = Number(row.maxReward);
-    if (normalizeLookup(id).indexOf("srujankidshouse") !== -1 && (maxReward === 100 || !maxReward)) {
-      maxReward = 1000;
+    const lookup = normalizeLookup(id);
+
+    // If maxReward is falsy, empty, or 0, default to the universal max cap of 1000
+    if (!maxReward) {
+      maxReward = MAX_POINTS;
     }
+
+    // Safety fallback for known custom high-value shops if they are still at default 100
+    if (
+      (lookup.indexOf("srujankidshouse") !== -1 ||
+       lookup.indexOf("sandeshagro") !== -1 ||
+       lookup.indexOf("rahulagency") !== -1 ||
+       lookup.indexOf("kalemedical") !== -1) &&
+      maxReward === 100
+    ) {
+      if (lookup.indexOf("kalemedical") !== -1) {
+        maxReward = 600;
+      } else {
+        maxReward = 1000;
+      }
+    }
+
     return {
       id: id,
       name: String(row.name),
