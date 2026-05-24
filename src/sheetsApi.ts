@@ -73,6 +73,12 @@ export function submitSheetsReward(
   });
 }
 
+export function lookupSheetsCustomer(mobile: string) {
+  return request<{ ok: boolean; found: boolean; customerName?: string; address?: string }>("lookupCustomer", {
+    mobile,
+  });
+}
+
 export function authLogin(password: string, username: string) {
   return request<{ ok: boolean; role?: string; shopId?: string; isAdmin?: boolean; token?: string }>("adminLogin", {
     username,

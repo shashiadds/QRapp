@@ -197,6 +197,10 @@ function doPost(event) {
     );
   }
 
+  if (body.action === "lookupCustomer") {
+    return jsonResponse(lookupCustomer(body.mobile));
+  }
+
   if (body.action === "adminLogin") {
     return jsonResponse(adminLogin(body.username, body.password));
   }
@@ -942,6 +946,29 @@ function readTransactions(includeArchive) {
       timestamp: String(row.timestamp),
     }))
     .reverse();
+}
+
+function lookupCustomer(mobile) {
+  const targetMobile = String(mobile || "").replace(/\D/g, "");
+  if (!/^[6-9]\d{9}$/.test(targetMobile)) {
+    return { ok: false, reason: "Enter a valid 10 digit mobile number." };
+  }
+
+  const transactions = readTransactions(true).filter((transaction) => {
+    return transaction.status === "approved" && transaction.mobile === targetMobile;
+  });
+
+  if (!transactions.length) {
+    return { ok: true, found: false };
+  }
+
+  const latest = transactions[0];
+  return {
+    ok: true,
+    found: true,
+    customerName: latest.customerName,
+    address: latest.address,
+  };
 }
 
 function readTransactionObjects(includeArchive) {

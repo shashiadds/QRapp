@@ -23,7 +23,7 @@ import {
   transactions as seedTransactions,
 } from "./data";
 import { submitReward } from "./rewardEngine";
-import { isSheetsConfigured, loadPublicData, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop } from "./sheetsApi";
+import { isSheetsConfigured, loadPublicData, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop, lookupSheetsCustomer } from "./sheetsApi";
 import type { FraudSignal, Session, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 
@@ -409,6 +409,7 @@ function CustomerFlow({
   const [reward, setReward] = useState<number | null>(null);
   const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
   const [giftState, setGiftState] = useState<"closed" | "opening" | "opened">("closed");
+  const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
 
   useEffect(() => {
     if (phase === "reward") {
@@ -428,6 +429,46 @@ function CustomerFlow({
     // Fetch IP and location in the background while the customer fills the form
     loadVisitorContext({ includeDeviceLocation: true }).then(setVisitorContext);
   }, []);
+
+  useEffect(() => {
+    if (!/^[6-9]\d{9}$/.test(mobile)) {
+      setIsLookingUpCustomer(false);
+      return;
+    }
+
+    let isCancelled = false;
+    const lookupTimer = window.setTimeout(async () => {
+      setIsLookingUpCustomer(true);
+      try {
+        const customer = isSheetsConfigured
+          ? await lookupSheetsCustomer(mobile)
+          : (() => {
+              const match = transactions.find((transaction) => transaction.mobile === mobile);
+              return {
+                ok: true,
+                found: Boolean(match),
+                customerName: match?.customerName,
+                address: match?.address,
+              };
+            })();
+
+        if (isCancelled || !customer.found) return;
+        setCustomerName((current) => current.trim() ? current : customer.customerName || "");
+        setAddress((current) => current.trim() ? current : customer.address || "");
+      } catch {
+        // Lookup is a convenience; reward submission validation remains the source of truth.
+      } finally {
+        if (!isCancelled) {
+          setIsLookingUpCustomer(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(lookupTimer);
+    };
+  }, [mobile, transactions]);
 
   const handleSubmit = () => {
     setPhase("processing");
@@ -495,6 +536,16 @@ function CustomerFlow({
               <p>Enter today&apos;s bill details to reveal instant mudra.</p>
             </div>
             <label>
+              Mobile number
+              <input
+                autoComplete="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={mobile}
+                onChange={(event) => setMobile(event.target.value.replace(/\D/g, ""))}
+              />
+            </label>
+            <label>
               Customer name
               <input
                 autoComplete="name"
@@ -511,16 +562,7 @@ function CustomerFlow({
                 onChange={(event) => setAddress(event.target.value)}
               />
             </label>
-            <label>
-              Mobile number
-              <input
-                autoComplete="tel"
-                inputMode="numeric"
-                maxLength={10}
-                value={mobile}
-                onChange={(event) => setMobile(event.target.value.replace(/\D/g, ""))}
-              />
-            </label>
+            {isLookingUpCustomer && <p className="muted-note">Checking customer details...</p>}
             <label>
               Purchase total
               <input
