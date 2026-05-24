@@ -133,6 +133,18 @@ function App() {
     return saved ? JSON.parse(saved) : seedShops;
   });
   const [fraudSignals, setFraudSignals] = useState<FraudSignal[]>(seedFraudSignals);
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (isSheetsConfigured) {
+      return seedTransactions;
+    }
+    const saved = localStorage.getItem("smart-mudra-transactions");
+    return saved ? JSON.parse(saved) : seedTransactions;
+  });
+  const [session, setSession] = useState<ActiveSession | null>(() => {
+    const saved = localStorage.getItem("smart-mudra-session");
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [shopPasswords, setShopPasswords] = useState<Record<string, string>>({});
   const [dataStatus, setDataStatus] = useState(
     isSheetsConfigured ? "Connecting to Google Sheets..." : "Local demo mode"
   );
