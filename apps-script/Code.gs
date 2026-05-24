@@ -139,6 +139,7 @@ function doGet(event) {
       shops: readShops().filter((shop) => canReadShop(session, shop.id)),
       transactions: transactions,
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
+      shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
     });
   }
 
@@ -160,6 +161,7 @@ function doPost(event) {
       shops: readShops().filter((shop) => canReadShop(session, shop.id)),
       transactions: transactions,
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
+      shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
     });
   }
 
@@ -806,6 +808,17 @@ function readFraudSignals() {
     attempts: Number(row.attempts),
     status: String(row.status),
   }));
+}
+
+function readShopPasswords() {
+  const admins = readObjects(SHEETS.admins);
+  const passwords = {};
+  admins.forEach(row => {
+    if (String(row.role) === "shopAdmin" && String(row.shopId)) {
+      passwords[String(row.shopId)] = String(row.password);
+    }
+  });
+  return passwords;
 }
 
 function archiveOldTransactions() {

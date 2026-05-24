@@ -39,7 +39,7 @@ const plainNumber = new Intl.NumberFormat("en-IN", {
 });
 
 function formatPoints(value: number) {
-  return `${pointNumber.format(value)} points`;
+  return `${pointNumber.format(value)} mudra`;
 }
 
 function formatPlainNumber(value: number) {
@@ -136,17 +136,6 @@ function App() {
   const [dataStatus, setDataStatus] = useState(
     isSheetsConfigured ? "Connecting to Google Sheets..." : "Local demo mode"
   );
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    if (isSheetsConfigured) {
-      return seedTransactions;
-    }
-    const saved = localStorage.getItem("smart-mudra-transactions");
-    return saved ? JSON.parse(saved) : seedTransactions;
-  });
-  const [session, setSession] = useState<ActiveSession>(() => {
-    const saved = localStorage.getItem("smart-mudra-session");
-    return saved ? JSON.parse(saved) : null;
-  });
   const [hasLoadedArchive, setHasLoadedArchive] = useState(false);
 
   useEffect(() => {
@@ -197,6 +186,7 @@ function App() {
         setShops(data.shops.length ? data.shops : seedShops);
         setTransactions(data.transactions);
         setFraudSignals(data.fraudSignals);
+        setShopPasswords(data.shopPasswords || {});
         setDataStatus("Google Sheets connected");
         setHasLoadedArchive(true);
       })
@@ -241,7 +231,7 @@ function App() {
               <QrCode size={64} style={{ color: '#059669', marginBottom: '1.5rem' }} />
               <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Scan to win!</h2>
               <p style={{ color: '#4b5563', maxWidth: '320px', lineHeight: 1.5 }}>
-                Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant points.
+                Please scan the Smart Mudra QR code at a participating shop to try your luck and earn instant mudra.
               </p>
             </div>
           </section>
@@ -315,6 +305,7 @@ function App() {
               setShops={setShops}
               transactions={transactions}
               fraudSignals={fraudSignals}
+              shopPasswords={shopPasswords}
               session={session}
             />
           </div>
@@ -461,7 +452,7 @@ function CustomerFlow({
             <div className="headline">
               <Gift size={34} />
               <h2>Try your luck</h2>
-              <p>Enter today&apos;s bill details to reveal instant points.</p>
+              <p>Enter today&apos;s bill details to reveal instant mudra.</p>
             </div>
             <label>
               Customer name
@@ -587,7 +578,7 @@ function ShopDashboard({
       <MetricGrid
         metrics={[
           { label: "Total scans", value: shopTransactions.length.toString(), icon: ScanLine },
-          { label: "Points given", value: formatPoints(totalPoints), icon: Trophy },
+          { label: "Mudra given", value: formatPoints(totalPoints), icon: Trophy },
           { label: "Average purchase", value: formatPlainNumber(averageBill), icon: BarChart3 },
           { label: "Cost per scan", value: formatPoints(shop.costPerScan), icon: Activity },
         ]}
@@ -635,12 +626,14 @@ function AdminDashboard({
   setShops,
   transactions,
   fraudSignals,
+  shopPasswords,
   session,
 }: {
   shops: Shop[];
   setShops: (shops: Shop[]) => void;
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
+  shopPasswords: Record<string, string>;
   session: ActiveSession;
 }) {
   const [isAddingShop, setIsAddingShop] = useState(false);
@@ -721,7 +714,7 @@ function AdminDashboard({
       <MetricGrid
         metrics={[
           { label: "Platform scans", value: transactions.length.toString(), icon: ScanLine },
-          { label: "Total points given", value: formatPoints(payout), icon: Gift },
+          { label: "Total mudra given", value: formatPoints(payout), icon: Gift },
           { label: "Active shops", value: shops.filter((shop) => shop.status === "active").length.toString(), icon: Store },
         ]}
       />
@@ -773,7 +766,7 @@ function AdminDashboard({
               <div className="shop-row" key={shop.id}>
                 <div>
                   <strong>{shop.name}</strong>
-                  <span>{shop.category}</span>
+                  <span>{shop.category} {shopPasswords[shop.id] ? ` · Pass: ${shopPasswords[shop.id]}` : ""}</span>
                 </div>
                 <div className="shop-row-actions">
                   <span className={`status ${shop.status}`}>{shop.status}</span>
@@ -886,7 +879,7 @@ function AdminReports({ transactions, shops, hideShopFilter = false }: { transac
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Shop Name", "Shop ID", "Purchase Count", "Total Purchase Value", "Total Points"];
+            const headers = ["Date", "Shop Name", "Shop ID", "Purchase Count", "Total Purchase Value", "Total Mudra"];
             const rows = filteredSummary.map(row => {
               const shop = shops.find(s => s.id === row.shopId);
               return [row.date, shop ? shop.name : row.shopId, row.shopId, row.billCount, row.totalBills, row.totalPoints];
@@ -950,7 +943,7 @@ function AdminReports({ transactions, shops, hideShopFilter = false }: { transac
               {!hideShopFilter && <th>Shop</th>}
               <th>Purchases</th>
               <th>Total Purchase</th>
-              <th>Total Points</th>
+              <th>Total Mudra</th>
             </tr>
           </thead>
           <tbody>
@@ -973,6 +966,15 @@ function AdminReports({ transactions, shops, hideShopFilter = false }: { transac
               </tr>
             )}
           </tbody>
+          <tfoot>
+            {filteredSummary.length > 0 && (
+              <tr style={{ fontWeight: "bold", background: "rgba(255,255,255,0.05)" }}>
+                <td colSpan={hideShopFilter ? 2 : 3} style={{ textAlign: "right" }}>Totals:</td>
+                <td>{formatPlainNumber(filteredSummary.reduce((sum, row) => sum + row.totalBills, 0))}</td>
+                <td>{formatPlainNumber(filteredSummary.reduce((sum, row) => sum + row.totalPoints, 0))}</td>
+              </tr>
+            )}
+          </tfoot>
         </table>
       </div>
       <PaginationControls
@@ -1094,7 +1096,7 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Points", "Point Rule", "Point Details", "Visits", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Mudra", "Mudra Rule", "Mudra Details", "Visits", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
               formatTransactionDate(tx.timestamp),
               formatTransactionTime(tx.timestamp),
@@ -1196,7 +1198,7 @@ function TransactionTable({
               {!compact && <th>Name</th>}
               {!compact && <th>Shop</th>}
               <th>Purchase</th>
-              <th>Points</th>
+              <th>Mudra</th>
               <th>Visits</th>
             </tr>
           </thead>

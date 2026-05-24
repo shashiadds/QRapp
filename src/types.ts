@@ -52,6 +52,7 @@ export type AppData = {
   shops: Shop[];
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
+  shopPasswords?: Record<string, string>;
 };
 
 export type PublicAppData = {
