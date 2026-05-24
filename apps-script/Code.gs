@@ -642,30 +642,90 @@ function calculateRewardDetails(shop, billAmount) {
 function getShopRewardRules(shop) {
   const lookup = normalizeLookup(shop.id + " " + shop.name);
 
-  if (lookup.indexOf("srujankidshouse") !== -1) {
-    return [
-      { minBill: 100, minPercent: 5, maxPercent: 7, probability: 90 },
-      { minBill: 100, minPercent: 7, maxPercent: 8, probability: 7 },
-      { minBill: 100, minPercent: 10, maxPercent: 10, probability: 3 },
-    ];
+  // CUSTOM_RULES_START
+  const CUSTOM_SHOP_RULES = {
+    "srujankidshouse": [
+      {
+        "minBill": 100,
+        "minPercent": 5,
+        "maxPercent": 7,
+        "probability": 90
+      },
+      {
+        "minBill": 100,
+        "minPercent": 7,
+        "maxPercent": 8,
+        "probability": 7
+      },
+      {
+        "minBill": 100,
+        "minPercent": 10,
+        "maxPercent": 10,
+        "probability": 3
+      }
+    ],
+    "sandeshagro": [
+      {
+        "minBill": 100,
+        "maxBill": 2000,
+        "minPercent": 5,
+        "maxPercent": 7
+      },
+      {
+        "minBill": 2000,
+        "maxBill": 10000,
+        "minPercent": 5,
+        "maxPercent": 5
+      },
+      {
+        "minBill": 10000,
+        "maxBill": 50000,
+        "minPercent": 4,
+        "maxPercent": 4
+      },
+      {
+        "minBill": 50000,
+        "minPercent": 2,
+        "maxPercent": 3
+      }
+    ],
+    "rahulagency": [
+      {
+        "minBill": 100,
+        "maxBill": 1000,
+        "minPercent": 10,
+        "maxPercent": 15
+      },
+      {
+        "minBill": 1000,
+        "maxBill": 5000,
+        "minPercent": 10,
+        "maxPercent": 20
+      },
+      {
+        "minBill": 5000,
+        "maxBill": 10000,
+        "minPercent": 10,
+        "maxPercent": 15
+      },
+      {
+        "minBill": 10000,
+        "maxBill": 50000,
+        "minPercent": 2,
+        "maxPercent": 7
+      }
+    ]
+  };
+  // CUSTOM_RULES_END
+
+  for (const key in CUSTOM_SHOP_RULES) {
+    if (lookup.indexOf(key) !== -1) {
+      return CUSTOM_SHOP_RULES[key];
+    }
   }
 
-  if (lookup.indexOf("sandeshagromachinery") !== -1) {
-    return [
-      { minBill: 100, maxBill: 2000, minPercent: 5, maxPercent: 7 },
-      { minBill: 2000, maxBill: 10000, minPercent: 5, maxPercent: 5 },
-      { minBill: 10000, maxBill: 50000, minPercent: 4, maxPercent: 4 },
-      { minBill: 50000, minPercent: 2, maxPercent: 3 },
-    ];
-  }
-
-  if (lookup.indexOf("rahulagency") !== -1) {
-    return [
-      { minBill: 100, maxBill: 1000, minPercent: 10, maxPercent: 15 },
-      { minBill: 1000, maxBill: 5000, minPercent: 10, maxPercent: 20 },
-      { minBill: 5000, maxBill: 10000, minPercent: 10, maxPercent: 15 },
-      { minBill: 10000, maxBill: 50000, minPercent: 2, maxPercent: 7 },
-    ];
+  if (shop.rewardBands && shop.rewardBands.length > 0) {
+    return shop.rewardBands;
   }
 
   return getDefaultRewardRules();

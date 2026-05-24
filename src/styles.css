@@ -287,9 +287,10 @@ label {
 }
 
 .reward-reveal strong {
-  color: #126b58;
+  color: #facc15;
   font-size: 64px;
   line-height: 1;
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
 }
 
 .reward-reveal span {
@@ -760,3 +761,267 @@ th {
 .coin:nth-child(6) { left: 20%; animation-delay: 0.7s; animation-duration: 3.1s; }
 .coin:nth-child(7) { left: 60%; animation-delay: 0.3s; animation-duration: 2.9s; }
 .coin:nth-child(8) { left: 80%; animation-delay: 0.6s; animation-duration: 2.7s; }
+
+/* ==========================================================================
+   Gift Box Opening Animation Styles
+   ========================================================================== */
+
+/* Gift Box Scene Container */
+.gift-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+  position: relative;
+  width: 100%;
+}
+
+/* Gift Box Container */
+.gift-box-container {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+  transition: transform 0.3s ease;
+  margin: 20px 0;
+}
+
+.gift-box-container:hover {
+  transform: scale(1.08);
+}
+
+/* Wiggle animation for closed state */
+@keyframes giftWiggle {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-4deg); }
+  30% { transform: rotate(3deg); }
+  45% { transform: rotate(-3deg); }
+  60% { transform: rotate(2deg); }
+  75% { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.gift-box-container.closed {
+  animation: giftWiggle 1.8s ease infinite;
+}
+
+/* Glow behind the gift box */
+.gift-box-glow {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.25) 0%, transparent 70%);
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 1;
+  transition: all 0.5s ease;
+}
+
+.opened .gift-box-glow {
+  animation: spinGlow 15s linear infinite;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, rgba(139, 92, 246, 0.2) 50%, transparent 70%);
+  width: 320px;
+  height: 320px;
+  top: -110px;
+}
+
+@keyframes spinGlow {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to { transform: translateX(-50%) rotate(360deg); }
+}
+
+/* Gift Box Shape */
+.gift-box {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Gift Lid */
+.gift-lid {
+  width: 110px;
+  height: 25px;
+  background: linear-gradient(135deg, #f87171, #dc2626);
+  border-radius: 4px;
+  position: absolute;
+  top: 0;
+  left: -5px;
+  z-index: 5;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.5s ease;
+}
+
+/* Lid Ribbon */
+.gift-lid::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to right, #fbbf24, #d97706);
+  left: 46px;
+  top: 0;
+  box-shadow: inset 1px 0 2px rgba(255,255,255,0.3);
+}
+
+/* Gift Body */
+.gift-body {
+  width: 100px;
+  height: 75px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-radius: 0 0 8px 8px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.6s ease, opacity 0.5s ease;
+}
+
+/* Body Ribbon */
+.gift-body::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to right, #fbbf24, #d97706);
+  left: 41px;
+  top: 0;
+  box-shadow: inset 1px 0 2px rgba(255,255,255,0.3);
+}
+
+/* Gift Bow */
+.gift-bow {
+  width: 50px;
+  height: 30px;
+  position: absolute;
+  top: -20px;
+  left: 25px;
+  z-index: 6;
+  transition: transform 0.6s ease, opacity 0.5s ease;
+}
+
+.gift-bow::before,
+.gift-bow::after {
+  content: "";
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  border: 5px solid #fbbf24;
+  border-radius: 50% 50% 0 50%;
+  transform: rotate(-45deg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.gift-bow::after {
+  left: 20px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(45deg);
+}
+
+/* Lid fly-off animation */
+.opening .gift-lid,
+.opened .gift-lid {
+  transform: translateY(-90px) rotate(25deg) scale(0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opening .gift-bow,
+.opened .gift-bow {
+  transform: translateY(-110px) rotate(-15deg) scale(0.8);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Body squash/hide animation */
+.opening .gift-body {
+  animation: bodySquash 0.6s ease forwards;
+}
+
+.opened .gift-body {
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes bodySquash {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.15, 0.75); }
+  50% { transform: scale(0.85, 1.2); }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Tap Prompt styling */
+.tap-prompt {
+  font-size: 15px;
+  color: #fbbf24;
+  font-weight: 700;
+  animation: pulseText 1.5s infinite;
+  margin-top: 15px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+
+@keyframes pulseText {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* Reward Content Pop Animation */
+.reward-content-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  max-height: 0;
+  overflow: hidden;
+  transition: transform 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+  width: 100%;
+}
+
+.opened .reward-content-pop {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+  max-height: 500px;
+  overflow: visible;
+}
+
+/* Reward pop overrides */
+.reward-amount {
+  color: #facc15 !important;
+  font-size: 68px;
+  line-height: 1;
+  font-weight: 800;
+  text-shadow: 0 0 25px rgba(250, 204, 21, 0.5);
+  margin: 0.75rem 0;
+  display: block;
+}
+
+.reward-label {
+  color: #94a3b8;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+}
+
+.reward-bill-info {
+  margin-top: 0.5rem;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.reward-thank-you {
+  margin-top: 1.5rem;
+  font-weight: 600;
+  color: #f8fafc;
+}

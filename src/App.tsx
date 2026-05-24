@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Download,
   Gift,
+  Key,
   QrCode,
   ScanLine,
   Settings2,
@@ -144,7 +145,16 @@ function App() {
     const saved = localStorage.getItem("smart-mudra-session");
     return saved ? JSON.parse(saved) : null;
   });
-  const [shopPasswords, setShopPasswords] = useState<Record<string, string>>({});
+  const [shopPasswords, setShopPasswords] = useState<Record<string, string>>(() => {
+    if (!isSheetsConfigured) {
+      return {
+        kalemedical: "kale123",
+        patilstore: "patil123",
+        joshimart: "joshi123"
+      };
+    }
+    return {};
+  });
   const [dataStatus, setDataStatus] = useState(
     isSheetsConfigured ? "Connecting to Google Sheets..." : "Local demo mode"
   );
@@ -399,6 +409,21 @@ function CustomerFlow({
   const [message, setMessage] = useState("");
   const [reward, setReward] = useState<number | null>(null);
   const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
+  const [giftState, setGiftState] = useState<"closed" | "opening" | "opened">("closed");
+
+  useEffect(() => {
+    if (phase === "reward") {
+      setGiftState("closed");
+    }
+  }, [phase]);
+
+  const handleOpenGift = () => {
+    if (giftState !== "closed") return;
+    setGiftState("opening");
+    window.setTimeout(() => {
+      setGiftState("opened");
+    }, 600);
+  };
 
   useEffect(() => {
     // Fetch IP and location in the background while the customer fills the form
@@ -521,28 +546,45 @@ function CustomerFlow({
         )}
 
         {shop.status === "active" && phase === "reward" && (
-          <div className="reward-reveal success-surface" style={{ position: 'relative', overflow: 'hidden' }}>
-            <div className="coin-container">
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
-              <div className="coin"></div>
+          <div className={`reward-reveal success-surface ${giftState}`} style={{ position: 'relative', overflow: 'hidden' }}>
+            {giftState === "opened" && (
+              <div className="coin-container">
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+                <div className="coin"></div>
+              </div>
+            )}
+            
+            <div className="gift-scene">
+              <div className={`gift-box-container ${giftState}`} onClick={handleOpenGift}>
+                <div className="gift-box-glow"></div>
+                <div className="gift-box">
+                  <div className="gift-bow"></div>
+                  <div className="gift-lid"></div>
+                  <div className="gift-body"></div>
+                </div>
+                {giftState === "closed" && <p className="tap-prompt">Tap to open your reward! 🎁</p>}
+              </div>
+
+              <div className="reward-content-pop">
+                <div className="success-icon-wrap bounce">
+                  <Trophy size={48} color="#facc15" />
+                </div>
+                <span className="reward-label">You won</span>
+                <strong className="reward-amount">{formatPoints(reward ?? 0)}</strong>
+                <p className="reward-bill-info">
+                  For your purchase of {formatPlainNumber(Number(billAmount))}
+                </p>
+                <p className="reward-thank-you">
+                  Thank you for shopping! Visit again.
+                </p>
+              </div>
             </div>
-            <div className="success-icon-wrap bounce">
-              <Trophy size={48} color="#059669" />
-            </div>
-            <span style={{ position: 'relative', zIndex: 2 }}>You won</span>
-            <strong style={{ position: 'relative', zIndex: 2, textShadow: '0 2px 10px rgba(16, 185, 129, 0.2)' }}>{formatPoints(reward ?? 0)}</strong>
-            <p style={{ marginTop: '0.5rem', color: '#6b7280', position: 'relative', zIndex: 2 }}>
-              For your purchase of {formatPlainNumber(Number(billAmount))}
-            </p>
-            <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151', position: 'relative', zIndex: 2 }}>
-              Thank you for shopping! Visit again.
-            </p>
           </div>
         )}
 
@@ -674,6 +716,12 @@ function AdminDashboard({
   const approved = transactions.filter((transaction) => transaction.status === "approved");
   const payout = approved.reduce((sum, item) => sum + item.reward, 0);
 
+  const getShopPassword = (shopId: string) => {
+    const normalizedId = shopId.toLowerCase().trim();
+    const entry = Object.entries(shopPasswords).find(([key]) => key.toLowerCase().trim() === normalizedId);
+    return entry ? entry[1] : null;
+  };
+
   const handleAddShop = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShopName.trim() || isSubmitting) return;
@@ -794,7 +842,26 @@ function AdminDashboard({
               <div className="shop-row" key={shop.id}>
                 <div>
                   <strong>{shop.name}</strong>
-                  <span>{shop.category} {shopPasswords[shop.id] ? ` · Pass: ${shopPasswords[shop.id]}` : ""}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+                    <span className="muted-note" style={{ fontSize: '12px' }}>{shop.category}</span>
+                    {getShopPassword(shop.id) && (
+                      <span className="shop-pass-badge" style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '11px',
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        color: '#fbbf24',
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        border: '1px solid rgba(245, 158, 11, 0.2)'
+                      }}>
+                        <Key size={10} style={{ color: '#fbbf24' }} />
+                        Pass: {getShopPassword(shop.id)}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="shop-row-actions">
                   <span className={`status ${shop.status}`}>{shop.status}</span>

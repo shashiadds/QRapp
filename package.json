@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run src/rewardEngine.test.ts",
-    "test:reward-rules": "node scripts/reward-rules.test.cjs"
+    "sync-rules": "node scripts/sync-rules.cjs",
+    "test:reward-rules": "npm run sync-rules && node scripts/reward-rules.test.cjs"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.5",

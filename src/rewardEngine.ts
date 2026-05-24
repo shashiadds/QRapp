@@ -1,4 +1,5 @@
 import type { RewardResult, Shop, Transaction, VisitorContext } from "./types";
+import CUSTOM_SHOP_RULES from "./customRules.json";
 
 const MIN_POINTS = 10;
 const MAX_POINTS = 1000;
@@ -77,21 +78,14 @@ function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculati
 function getShopRewardRules(shop: Shop) {
   const lookup = normalizeLookup(`${shop.id} ${shop.name}`);
 
-  if (lookup.includes("srujankidshouse")) {
-    return [
-      { minBill: 100, minPercent: 5, maxPercent: 7, probability: 90 },
-      { minBill: 100, minPercent: 7, maxPercent: 8, probability: 7 },
-      { minBill: 100, minPercent: 10, maxPercent: 10, probability: 3 },
-    ];
+  for (const [key, rules] of Object.entries(CUSTOM_SHOP_RULES)) {
+    if (lookup.includes(key)) {
+      return rules;
+    }
   }
 
-  if (lookup.includes("rahulagency")) {
-    return [
-      { minBill: 100, maxBill: 1000, minPercent: 10, maxPercent: 15 },
-      { minBill: 1000, maxBill: 5000, minPercent: 10, maxPercent: 20 },
-      { minBill: 5000, maxBill: 10000, minPercent: 10, maxPercent: 15 },
-      { minBill: 10000, maxBill: 50000, minPercent: 2, maxPercent: 7 },
-    ];
+  if (shop.rewardBands && shop.rewardBands.length > 0) {
+    return shop.rewardBands;
   }
 
   return getDefaultRewardRules();

@@ -203,6 +203,69 @@ describe("calculateReward", () => {
 
     expect(reward).toBe(400);
   });
+
+  describe("Sandesh Agro Machinery custom slabs", () => {
+    const sandeshShop = shop({
+      id: "sandeshagromachinery",
+      name: "Sandesh Agro Machinery",
+      maxReward: 5000,
+      rewardBands: [],
+    });
+
+    it("works when shop name is Sandesh Agro and ID is sandeshagro", () => {
+      const shortShop = shop({
+        id: "sandeshagro",
+        name: "Sandesh Agro",
+        maxReward: 5000,
+        rewardBands: [],
+      });
+      // 5% of 5000 = 250
+      expect(calculateReward(shortShop, 5000)).toBe(250);
+    });
+
+    it("falls back to 10 points when bill is below 100", () => {
+      const reward = calculateReward(sandeshShop, 50);
+      expect(reward).toBe(10);
+    });
+
+    it("uses 5% - 7% slab for bills between 100 and 2000", () => {
+      // 5% of 1000 = 50
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      expect(calculateReward(sandeshShop, 1000)).toBe(50);
+
+      // 7% of 1000 = 70
+      vi.spyOn(Math, "random").mockReturnValue(1);
+      expect(calculateReward(sandeshShop, 1000)).toBe(70);
+    });
+
+    it("uses 5% slab for bills between 2000 and 10000", () => {
+      // 5% of 5000 = 250
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      expect(calculateReward(sandeshShop, 5000)).toBe(250);
+
+      vi.spyOn(Math, "random").mockReturnValue(1);
+      expect(calculateReward(sandeshShop, 5000)).toBe(250);
+    });
+
+    it("uses 4% slab for bills between 10000 and 50000", () => {
+      // 4% of 20000 = 800
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      expect(calculateReward(sandeshShop, 20000)).toBe(800);
+
+      vi.spyOn(Math, "random").mockReturnValue(1);
+      expect(calculateReward(sandeshShop, 20000)).toBe(800);
+    });
+
+    it("caps effective bill amount at 50000 and uses 2% - 3% slab", () => {
+      // 2% of 50000 = 1000
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      expect(calculateReward(sandeshShop, 150000)).toBe(1000);
+
+      // 3% of 50000 = 1500, capped at global max of 1000 points
+      vi.spyOn(Math, "random").mockReturnValue(1);
+      expect(calculateReward(sandeshShop, 150000)).toBe(1000);
+    });
+  });
 });
 
 describe("submitReward", () => {

@@ -20,7 +20,12 @@ function loadTsModule(relativePath) {
   const context = vm.createContext({
     exports: module.exports,
     module,
-    require,
+    require: (id) => {
+      if (id.endsWith("customRules.json")) {
+        return require("../src/customRules.json");
+      }
+      return require(id);
+    },
     console,
     Date,
     Math,
