@@ -447,7 +447,7 @@ function migrateAdminPassword(sheet, headers, rowNumber, password) {
   const passwordRecord = hashPassword(password);
 
   if (passwordIndex !== -1) {
-    sheet.getRange(rowNumber, passwordIndex + 1).setValue("");
+    sheet.getRange(rowNumber, passwordIndex + 1).setValue(password);
   }
   if (passwordSaltIndex !== -1) {
     sheet.getRange(rowNumber, passwordSaltIndex + 1).setValue(passwordRecord.salt);
@@ -480,7 +480,7 @@ function addShop(shopData) {
 
   const adminRow = {
     username: shopId,
-    password: "",
+    password: defaultPassword,
     passwordSalt: passwordRecord.salt,
     passwordHash: passwordRecord.hash,
     role: "shopAdmin",
