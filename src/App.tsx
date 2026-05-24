@@ -505,14 +505,26 @@ function CustomerFlow({
         )}
 
         {shop.status === "active" && phase === "reward" && (
-          <div className="reward-reveal">
-            <CheckCircle2 size={42} />
-            <span>You won</span>
-            <strong>{formatPoints(reward ?? 0)}</strong>
-            <p style={{ marginTop: '0.5rem', color: '#6b7280' }}>
+          <div className="reward-reveal success-surface" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div className="coin-container">
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+              <div className="coin"></div>
+            </div>
+            <div className="success-icon-wrap bounce">
+              <Trophy size={48} color="#059669" />
+            </div>
+            <span style={{ position: 'relative', zIndex: 2 }}>You won</span>
+            <strong style={{ position: 'relative', zIndex: 2, textShadow: '0 2px 10px rgba(16, 185, 129, 0.2)' }}>{formatPoints(reward ?? 0)}</strong>
+            <p style={{ marginTop: '0.5rem', color: '#6b7280', position: 'relative', zIndex: 2 }}>
               For your purchase of {formatPlainNumber(Number(billAmount))}
             </p>
-            <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151' }}>
+            <p style={{ marginTop: '1.5rem', fontWeight: 600, color: '#374151', position: 'relative', zIndex: 2 }}>
               Thank you for shopping! Visit again.
             </p>
           </div>
