@@ -1108,3 +1108,30 @@ function setupDailyReportTrigger() {
     .atHour(1)
     .create();
 }
+
+// ------------------------------------------------------------------------
+// ONE-TIME HELPER FUNCTION TO RESET PASSWORD
+// Select "updateSrujanPassword" in the Apps Script editor and click "Run"
+// ------------------------------------------------------------------------
+function updateSrujanPassword() {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.admins);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const usernameIdx = headers.indexOf("username");
+  const passwordIdx = headers.indexOf("password");
+  const passwordSaltIdx = headers.indexOf("passwordSalt");
+  const passwordHashIdx = headers.indexOf("passwordHash");
+  
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][usernameIdx]) === "srujankidshouse") {
+      const newPassword = "srujan123";
+      const record = hashPassword(newPassword);
+      sheet.getRange(i + 1, passwordIdx + 1).setValue(newPassword);
+      sheet.getRange(i + 1, passwordSaltIdx + 1).setValue(record.salt);
+      sheet.getRange(i + 1, passwordHashIdx + 1).setValue(record.hash);
+      Logger.log("Successfully updated password for srujankidshouse to: " + newPassword);
+      return;
+    }
+  }
+  Logger.log("Could not find shop 'srujankidshouse' in the admins sheet.");
+}
