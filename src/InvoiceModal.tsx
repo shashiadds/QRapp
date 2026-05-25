@@ -120,6 +120,9 @@ Verified Digital Receipt.
 
   return (
     <div className="invoice-modal-overlay" onClick={handleOverlayClick}>
+      <button className="invoice-modal-close-btn" onClick={onClose} aria-label="Close invoice dialog">
+        <X size={24} />
+      </button>
       <div className="invoice-card-container" ref={modalRef}>
         {/* Invoice Card Header */}
         <div className="invoice-card-header-view">
@@ -237,10 +240,6 @@ Verified Digital Receipt.
             {copied ? "Copied!" : "Copy Details"}
           </button>
         </div>
-
-        <button className="invoice-modal-close-btn" onClick={onClose} aria-label="Close invoice dialog">
-          <X size={20} />
-        </button>
       </div>
     </div>
   );

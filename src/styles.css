@@ -1078,28 +1078,39 @@ th {
 }
 
 .invoice-modal-close-btn {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  background: #ef4444 !important;
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: rgba(255, 255, 255, 0.15) !important;
   color: white !important;
-  border: none !important;
-  width: 32px;
-  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 150 !important;
+  z-index: 10000 !important;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .invoice-modal-close-btn:hover {
-  background: #dc2626 !important;
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.55);
+}
+
+@media (max-width: 480px) {
+  .invoice-modal-close-btn {
+    top: 1rem;
+    right: 1rem;
+    width: 38px;
+    height: 38px;
+  }
 }
 
 .invoice-card-header-view {
