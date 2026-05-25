@@ -47,8 +47,294 @@ export const shops: Shop[] = [
       { reward: 50, probability: 5, minBill: 150 },
     ],
   },
+  {
+    id: "sandeshagromachinery910",
+    name: "Sandesh Agro Machinery",
+    category: "Agro Machinery",
+    status: "active",
+    maxReward: 1000,
+    maxBillAmount: 100000,
+    costPerScan: 12,
+    rewardBands: [
+      { minBill: 100, maxBill: 100000, minPercent: 5, maxPercent: 5 }
+    ]
+  },
+  {
+    id: "rahulagency363",
+    name: "Rahul Agency",
+    category: "Agency",
+    status: "active",
+    maxReward: 1000,
+    maxBillAmount: 100000,
+    costPerScan: 15,
+    rewardBands: [
+      { minBill: 100, maxBill: 100000, minPercent: 5, maxPercent: 5 }
+    ]
+  },
+  {
+    id: "ganeshelectrical947",
+    name: "Ganesh Electricals",
+    category: "Electricals",
+    status: "active",
+    maxReward: 500,
+    maxBillAmount: 50000,
+    costPerScan: 10,
+    rewardBands: [
+      { minBill: 50, maxBill: 50000, minPercent: 4, maxPercent: 8 }
+    ]
+  },
+  {
+    id: "srujankidshouse119",
+    name: "Srujan Kids House",
+    category: "Kids Wear",
+    status: "active",
+    maxReward: 1000,
+    maxBillAmount: 100000,
+    costPerScan: 10,
+    rewardBands: [
+      { minBill: 50, maxBill: 100000, minPercent: 6, maxPercent: 15 }
+    ]
+  },
+  {
+    id: "jivanoptical174",
+    name: "Jivan Optical",
+    category: "Opticals",
+    status: "active",
+    maxReward: 100,
+    maxBillAmount: 10000,
+    costPerScan: 10,
+    rewardBands: [
+      { minBill: 50, maxBill: 10000, minPercent: 5, maxPercent: 12 }
+    ]
+  }
 ];
 
-export const transactions: Transaction[] = [];
+const rawTsv = `id	mobile	shopId	billAmount	reward	status	timestamp	customerName	address	ipAddress	location	latitude	longitude	rewardRule	rewardDetails
+TRX-769930	9766234366	KaleMedical	1050	110	approved	2026-05-12T12:21:24.991Z	Sandesh shantilal Thole	"Newasa phata-newasa road, mukindpur
+newasa phata, newasa."	2401:4900:1b60:5e89:b5da:762:dcac:781d	Nashik, Maharashtra, IN	20.0296	73.7156		
+TRX-832494	9822600624	sandeshagromachinery910	500	40	approved	2026-05-12T12:34:52.048Z	Sandesh Kale	Newasa	2401:4900:5602:8d3f:24e6:148d:b2b9:13a4	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-673865	9860858401	KaleMedical	100	10	approved	2026-05-12T15:25:59.376Z	Sandip Takapere	Mukindpur	2401:4900:7fb9:123:30c3:c0ff:fe2c:ed2f	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-623805	7499582970	KaleMedical	520	40	approved	2026-05-13T06:45:42.902Z	Shrikant salve	Nevasa	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105		
+TRX-137929	9423387233	rahulagency363	19600	420	approved	2026-05-13T09:50:05.290Z	Rahul Mate	Rahul agency newasa fata near ambika hospital	2401:4900:7fa9:5922:443e:69ff:fe96:ea7c	Pune, Maharashtra, IN	19.5246206	74.9563478		
+TRX-531678	8275239253	KaleMedical	140	10	approved	2026-05-13T16:33:16.219Z	Bhausaheb Gondhali	Newasa	2409:40c2:8011:d4b7:8000::	Ahilyanagar, Maharashtra, IN	19.5247206	74.9553857		
+TRX-250081	9665122166	KaleMedical	726	60	approved	2026-05-14T05:35:45.817Z	बेबी लोळगे	नेवासा खु.	2409:4081:1c19:2fba:8dd:80ec:3cf9:55fa	Pune, Maharashtra, IN	19.5244088	74.9554		
+TRX-340185	7741809704	KaleMedical	160	10	approved	2026-05-14T06:21:28.007Z	Kapil devidas pandit	At. Post Ahilyanagar Newasa	2409:4081:1610:ea7d::261a:c8a5	Nagpur, Maharashtra, IN	19.5246899	74.955383		
+TRX-989582	9552570229	KaleMedical	513	40	approved	2026-05-14T06:25:51.343Z	कुसुम दामोधर। कोरेकर	खलाल पिंपरी तालुका नेवासा	2401:4900:5036:91c:1:0:dfd0:50ea	Girnāre, Maharashtra, IN	20.074	73.6619		
+TRX-970929	9689682756	KaleMedical	432	30	approved	2026-05-14T06:32:23.883Z	Popat	खरवंडी	2401:4900:ad3d:f533:c01c:37ff:fe48:de39	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-659364	9822630472	KaleMedical	307	20	approved	2026-05-14T07:24:45.959Z	नांगरे सर	नेवासा	2402:8100:303e:9997:85f2:54f6:2103:32b0	Caranzalem, Goa, IN	15.4649	73.8109		
+TRX-507076	9021124610	KaleMedical	800	40	approved	2026-05-14T07:33:35.886Z	Rajana sudam dange	Gogalgaon tal. Newasa, dist ahemednager	2409:40c2:801c:e8f2:8000::	Ahilyanagar, Maharashtra, IN	19.524714	74.9553731		
+TRX-180844	9822538202	KaleMedical	497	40	approved	2026-05-14T07:49:28.866Z	Labade Gopichand	मडकी	2409:40c2:8434:4d93:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423		
+TRX-980122	9860535519	KaleMedical	368	40	approved	2026-05-14T07:57:55.388Z	Anil Kanagre	WJJX+73X	2401:4900:79d3:4a73:e0f0:e8ff:feb3:341a	Ahmedabad, Gujarat, IN	23.0276	72.5871		
+TRX-831521	9890555628	KaleMedical	1021	80	approved	2026-05-14T08:30:06.166Z	Machindra Mote	Vadala	Unknown	Unknown	19.5246977	74.9553689		
+TRX-674903	7517379628	KaleMedical	713	60	approved	2026-05-14T08:58:56.262Z	Ashpak Shaikh	Newasa	2401:4900:54d4:1608:4933:c767:18ac:94a9	Surat, Gujarat, IN	21.1981	72.8298		
+TRX-617320	7276748111	KaleMedical	394	30	approved	2026-05-14T09:05:08.020Z	Bhupesh patel	Newasa phata	2401:4900:c09c:4651:fdac:17f3:235c:ab82	Pune, Maharashtra, IN	19.5246934	74.9553793		
+TRX-392957	8530933005	KaleMedical	656	40	approved	2026-05-14T09:11:01.354Z	Rajana sudam dange	Gogalgaon newasa	2409:40c2:8431:f988:8000::	Aurangabad, Maharashtra, IN	19.5247029	74.9553783		
+TRX-583723	9139514870	KaleMedical	660	50	approved	2026-05-14T09:17:00.708Z	Gorkh Jadhav	Newasa	2401:4900:5034:5282:d3d3:57d7:f777:362	Girnāre, Maharashtra, IN	20.074	73.6619		
+TRX-165594	9822600624	KaleMedical	658	60	approved	2026-05-14T09:33:46.316Z	Sandesh Kale	Newasa	2401:4900:c09b:281f:5c49:c5ce:5a5:8a27	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-256319	9921741675	KaleMedical	500	60	approved	2026-05-14T09:38:48.347Z	kailas borude	,dahigao	117.254.232.35	Ahmadnagar, Maharashtra, IN	19.09457	74.73843		
+TRX-971988	8625940182	KaleMedical	650	40	approved	2026-05-14T09:50:41.106Z	Rachana khandagle	Bhandup west Mumbai	2401:4900:1b81:eed9:1:1:e721:831a	Satara, Maharashtra, IN	17.689	73.9883		
+TRX-871147	8830095915	KaleMedical	360	40	approved	2026-05-14T09:53:36.431Z	Sachin Garje	At wadule TQ. newasa dist ahmednagar	2409:40c2:842b:3251:8445:fcff:fefd:e6fb	Aurangabad, Maharashtra, IN	19.8776	75.3423		
+TRX-268266	9049510549	KaleMedical	240	30	approved	2026-05-14T10:12:53.256Z	Bebi waghmare	Malichinchora	2409:40c2:8014:ea7:70fe:6b0f:c29a:10c4	Ahilyanagar, Maharashtra, IN	19.52487027	74.95549539		
+TRX-395021	8380949493	KaleMedical	266	20	approved	2026-05-14T10:54:32.359Z	वर्षा सावंत	खडका तालुका नेवासा जील्हा अहिल्यानगर्	2409:40c2:8057:6419:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312		
+TRX-417992	9763161671	KaleMedical	433	40	approved	2026-05-14T11:23:20.302Z	Gajanan L kapile	Jalke khurd	2401:4900:ad3b:bb38:8ceb:3d24:1710:e918	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-740644	9730555343	KaleMedical	323	30	approved	2026-05-14T11:55:49.297Z	नानासाहेब कराळे	नेवासा खुद	2401:4900:79eb:d7e2:8c68:66ff:fef1:2556	Ahmedabad, Gujarat, IN	23.0276	72.5871		
+TRX-374865	8459935956	KaleMedical	1545	180	approved	2026-05-14T13:07:28.145Z	Sanjivani shinde	Newasa	2409:4081:31d:cab8::2458:40a4	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-364081	8459384345	KaleMedical	1657	210	approved	2026-05-14T13:24:04.225Z	Pradip Shirsath	Newaska fata	203.109.34.30	Gangapur, Maharashtra, IN	19.5247052	74.9553739		
+TRX-466893	9767945799	KaleMedical	1472	120	approved	2026-05-14T13:50:59.182Z	Gorkh Jadhav	Newasa	2401:4900:5034:5282:d486:4cc4:a327:6a93	Girnāre, Maharashtra, IN	19.5246833	74.9553787		
+TRX-747015	9730352775	KaleMedical	2200	150	approved	2026-05-14T14:06:20.710Z	Akash Vyawhare	Newasa	2409:40c2:804a:7152:8000::::	Ahilyanagar, Maharashtra, IN	19.5247054	74.9553904		
+TRX-128755	7378308094	KaleMedical	640	60	approved	2026-05-14T14:17:46.530Z	Akash vyawhare	Newasa	2409:40c2:804a:7152:8000::	Ahilyanagar, Maharashtra, IN	19.524689	74.9553702		
+TRX-199349	8857072501	KaleMedical	645	60	approved	2026-05-14T15:02:25.469Z	Akash Vyawhare	Newasa	2409:40c2:804a:7152:8000::	Ahilyanagar, Maharashtra, IN	19.5247006	74.9553851		
+TRX-619342	9890874466	KaleMedical	19600	10	approved	2026-05-14T17:48:07.724Z	Vaishali mate	Newasa fata	59.97.151.75	Jategaon, Maharashtra, IN	19.9228	73.6486		
+TRX-489500	9890874466	rahulagency363	15200	100	approved	2026-05-14T17:50:32.783Z	Vaishali mate	Newasa fata	59.97.151.75	Jategaon, Maharashtra, IN	19.9228	73.6486		
+TRX-889455	9890874466	rahulagency363	5000	100	approved	2026-05-14T17:52:16.941Z	Pari mate	Newasa fata	59.97.151.75	Jategaon, Maharashtra, IN	19.9228	73.6486		
+TRX-868531	9890874466	rahulagency363	45000	100	approved	2026-05-14T17:53:12.100Z	Arnav mate	Newasa fata	59.97.151.75	Jategaon, Maharashtra, IN	19.9228	73.6486		
+TRX-258596	9850700038	KaleMedical	329	30	approved	2026-05-15T04:27:49.227Z	Sameer Ghule	Gade Nagar	2409:40c2:8433:df0f:cd72:59ac:dc83:9244	Aurangabad, Maharashtra, IN	19.8776	75.3423		
+TRX-889255	9076103895	KaleMedical	570	40	approved	2026-05-15T05:00:30.899Z	Aarchna	Benda	157.33.219.173	Shrirampur, Maharashtra, IN	19.5246941	74.9553793		
+TRX-684990	8975914758	KaleMedical	459	60	approved	2026-05-15T05:01:31.098Z	Baghwan pandure	Jainpur	117.223.84.199	Rajkot, Gujarat, IN	22.2904	70.7915		
+TRX-123921	9527468553	KaleMedical	860	80	approved	2026-05-15T05:05:31.846Z	Lakshman sagare	Belpandhari	117.223.84.199	Rajkot, Gujarat, IN	22.2904	70.7915		
+TRX-816831	7038499789	KaleMedical	868	50	approved	2026-05-15T06:21:20.256Z	Patil Swati	"Parth nivas om shantinagar
+Newasa phata"	2401:4900:ad36:5bd6:c05d:dbff:fe0e:b674	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-995788	9076103895	KaleMedical	260	20	approved	2026-05-15T11:57:52.431Z	Waghsdhr narayan	Beugx	2409:4081:2b00:6371::aaca:5f14	Pune, Maharashtra, IN	19.5246917	74.9553805		
+TRX-511085	9561923231	KaleMedical	2700	240	approved	2026-05-15T12:07:28.185Z	हरिभाऊ भोगे	नेवासा	2409:40c2:8042:f912:64a5:a5ff:feb0:1ad	Ahilyanagar, Maharashtra, IN	19.5247004	74.9553784		
+TRX-262086	9139514870	KaleMedical	1600	190	approved	2026-05-15T12:38:43.728Z	Gorakha jadhav	Newasa	2401:4900:5031:8c68:76fe:30ef:cfe2:888b	Girnāre, Maharashtra, IN	20.074	73.6619		
+TRX-638067	8669750549	KaleMedical	363	40	approved	2026-05-16T05:08:08.063Z	Kendle bharti	Fata	2401:4900:c0f4:79cd:5000:8ff:fe75:18ad	Pune, Maharashtra, IN	18.5211	73.8502		
+TRX-769514	9881110100	KaleMedical	828	40	approved	2026-05-16T07:40:21.947Z	Vasim pathan	Nevasa	2409:40c2:8007:64c8:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312		
+TRX-565133	9325397137	sandeshagromachinery910	2540	100	approved	2026-05-16T08:23:24.370Z	Akash Bhange	Rudhdjt	2409:40c2:8016:b7e9:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312		
+TRX-699954	9309811030	sandeshagromachinery910	550	30	approved	2026-05-16T08:23:46.465Z	Aditya jadhav	Newasa fata	203.109.34.27	Gangapur, Maharashtra, IN	19.6972	75.0105		
+TRX-441934	8308978770	KaleMedical	516	30	approved	2026-05-16T12:51:34.529Z	Baburav baisaebr	Nevasa	2409:40c2:804f:e89a:8000::	Ahilyanagar, Maharashtra, IN	19.5246984	74.9553778		
+TRX-855622	9665888330	KaleMedical	417	40	approved	2026-05-16T12:56:56.543Z	रामचंद्र धुमाळ	नेवासा तालुका खरवंडी	2409:4081:e3d:9302::51c8:a805	Badnapur, Maharashtra, IN	19.8689	75.7295		
+TRX-313393	9970645941	KaleMedical	569	50	approved	2026-05-17T04:49:12.324Z	Pawar	Fata	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105		
+TRX-506883	9890292697	ganeshelectrical947	36000	50	approved	2026-05-17T15:43:23.798Z	prasanna mate	Newasa फाटा	117.222.160.64	Vadodara, Gujarat, IN	22.3008	73.2043		
+TRX-220571	9881222724	KaleMedical	430	40	approved	2026-05-18T04:42:48.685Z	Narayan Korade	Fata	2409:4081:1dbf:ed4d::a949:bb0e	Pune, Maharashtra, IN	19.53153153	74.96214715	percentage-slab	9.66% of 430, rounded from 41.53 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=430
+TRX-234554	7040124373	KaleMedical	478	50	approved	2026-05-18T04:52:17.967Z	Sunil Walekar	Newasa	2409:40c2:801e:ce54:8000::	Ahilyanagar, Maharashtra, IN	19.5246949	74.9553799	percentage-slab	11.93% of 478, rounded from 57.01 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=478
+TRX-424335	8329089686	KaleMedical	385	30	approved	2026-05-18T05:15:11.204Z	Somnath chavhan	Galnimb अहमदनगर	2409:4081:1d15:1638:880f:bdff:fe4a:627a	Pune, Maharashtra, IN	19.5249949	74.9561382	percentage-slab	9.24% of 385, rounded from 35.57 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=385
+TRX-567098	9011712987	KaleMedical	848	60	approved	2026-05-18T05:22:37.896Z	Revannth lakade	Nevasa	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	7.68% of 848, rounded from 65.14 to 60; raw=60; capped=60; caps=shopMax=500, globalMax=1000, purchaseTotal=848
+TRX-415735	9823900968	KaleMedical	901	70	approved	2026-05-18T05:25:37.460Z	Vedant kishor Shinde	Suregav Gangapur	2409:40c2:8058:a75b:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	8.41% of 901, rounded from 75.81 to 70; raw=70; capped=70; caps=shopMax=500, globalMax=1000, purchaseTotal=901
+TRX-317522	9657428792	KaleMedical	3367	260	approved	2026-05-18T05:35:55.507Z	Kaware kantabai	Kukana	203.109.34.30	Gangapur, Maharashtra, IN	19.5246954	74.9553734	percentage-slab	7.91% of 3367, rounded from 266.49 to 260; raw=260; capped=260; caps=shopMax=500, globalMax=1000, purchaseTotal=3367
+TRX-213754	8530577451	KaleMedical	1501	210	approved	2026-05-18T06:15:06.276Z	Sushila dhotre	Nevsa	2401:4900:79f1:810:b402:d3ff:fecc:32bc	Ahmedabad, Gujarat, IN	19.5246991	74.9553691	percentage-slab	14.24% of 1501, rounded from 213.68 to 210; raw=210; capped=210; caps=shopMax=500, globalMax=1000, purchaseTotal=1501
+TRX-468580	8530577451	KaleMedical	200	20	approved	2026-05-18T07:25:24.815Z	Saurabh Kangare	Newasa	2401:4900:ac9c:b52d:8033:86ff:fecc:3794	Pune, Maharashtra, IN	19.5246993	74.955373	percentage-slab	10.14% of 200, rounded from 20.28 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=200
+TRX-135484	9860626382	ganeshelectrical947	19600	10	approved	2026-05-18T07:57:33.244Z	Aarush bhagwat	Newasa fata	59.97.155.169	Jategaon, Maharashtra, IN	19.5245938	74.9563416	fixed-probability-band	10 point band selected from roll 73.7924 of 100; raw=10; capped=10; caps=shopMax=100, globalMax=1000, purchaseTotal=19600
+TRX-879032	9421554646	KaleMedical	280	30	approved	2026-05-18T08:56:24.901Z	Gorakshanath dagadu Gandal sainathnaga	Sainathnagar  newasa	2409:40c2:8411:e7f7:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	11.96% of 280, rounded from 33.48 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=280
+TRX-397728	9503787907	KaleMedical	500	50	approved	2026-05-18T09:17:50.517Z	Sushil Bhagchand Salve	Maktapur newasa	2401:4900:c0b3:149c:17c3:ff18:d847:d610	Pune, Maharashtra, IN	19.5246936	74.9553778	percentage-slab	10.32% of 500, rounded from 51.60 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=500
+TRX-169081	7507335297	KaleMedical	500	50	approved	2026-05-18T10:11:25.791Z	Sahil Ugale	Newasa fata	2401:4900:5134:e74b:257e:8143:e757:b970	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	11.46% of 500, rounded from 57.29 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=500
+TRX-282723	7507335297	KaleMedical	500	40	approved	2026-05-18T10:12:11.958Z	Sahil Ugale	NEWASA fata	2401:4900:5134:e74b:257e:8143:e757:b970	Pune, Maharashtra, IN	19.5247074	74.9553766	percentage-slab	9.84% of 500, rounded from 49.18 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=500
+TRX-506995	8767502127	KaleMedical	610	50	approved	2026-05-18T10:28:18.623Z	Jaganath waghmare	Balupimpalgaon	2409:4081:97:1898::8e7:60a1	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	9.04% of 610, rounded from 55.15 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=610
+TRX-181408	8608346265	KaleMedical	20	10	approved	2026-05-18T10:29:08.979Z	Riyaj sayyad	Ap malichinchora	2409:40c2:841c:d5:ec93:cff:fe21:7327	Aurangabad, Maharashtra, IN	19.8776	75.3423	fixed-probability-band	5 point band selected from roll 25.1488 of 90; raw=5; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=20
+TRX-269947	8956950631	KaleMedical	860	80	approved	2026-05-18T10:29:29.381Z	Latabai dhanayak	Gangapur	2401:4900:5021:99aa:181e:b026:e3ed:7c34	Girnāre, Maharashtra, IN	19.5246986	74.95538	percentage-slab	9.69% of 860, rounded from 83.33 to 80; raw=80; capped=80; caps=shopMax=500, globalMax=1000, purchaseTotal=860
+TRX-744547	9970155864	KaleMedical	610	50	approved	2026-05-18T10:34:26.017Z	Gorakh revji jadhav	Tilapur	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	8.97% of 610, rounded from 54.74 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=610
+TRX-458989	8459083699	KaleMedical	290	20	approved	2026-05-18T10:43:54.664Z	Anita bhagvat	Gidegavaon	2409:4081:2e32:4471:dca5:b028:3946:ff57	Pune, Maharashtra, IN	19.5246938	74.9553765	percentage-slab	8.80% of 290, rounded from 25.52 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=290
+TRX-274243	9604103413	KaleMedical	270	20	approved	2026-05-18T10:45:06.227Z	Akshay Kadu	Babhlukede	2401:4900:7faf:ac78:b365:b08c:57f:1a13	Pune, Maharashtra, IN	19.5246939	74.9553758	percentage-slab	8.97% of 270, rounded from 24.22 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=270
+TRX-430089	9139514870	KaleMedical	2608	200	approved	2026-05-18T11:39:23.363Z	Gaikwad suvarna	Suregav	2401:4900:5031:8c68:65df:7736:7d76:4a14	Girnāre, Maharashtra, IN	20.074	73.6619	percentage-slab	7.86% of 2608, rounded from 204.90 to 200; raw=200; capped=200; caps=shopMax=500, globalMax=1000, purchaseTotal=2608
+TRX-570757	9307883992	KaleMedical	1200	170	approved	2026-05-18T12:59:45.350Z	Pawar hausabai	Newasa	49.15.92.192	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	14.50% of 1200, rounded from 174.04 to 170; raw=170; capped=170; caps=shopMax=500, globalMax=1000, purchaseTotal=1200
+TRX-788796	8767562188	KaleMedical	650	40	approved	2026-05-18T14:12:12.002Z	Pagare suresh	Kharavadhi	203.109.34.30	Gangapur, Maharashtra, IN	19.5247	74.9553809	percentage-slab	7.04% of 650, rounded from 45.74 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=650
+TRX-511612	9423039056	KaleMedical	362	30	approved	2026-05-18T15:03:05.082Z	Mate  Nandkishor Padmakar	At. Gade nagar N. Fata tel. Newasa	2409:40c2:8405:2417:dd:a6ff:fe3f:82ed	Aurangabad, Maharashtra, IN	19.5248363	74.955593	percentage-slab	10.15% of 362, rounded from 36.73 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=362
+TRX-595597	9226261959	KaleMedical	350	30	approved	2026-05-18T15:32:07.200Z	Vikas Ostwal	Newasa	2401:4900:5604:c51d:7c04:30e4:1dd1:e7b6	Pune, Maharashtra, IN	19.52802198	74.95068133	percentage-slab	9.84% of 350, rounded from 34.44 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=350
+TRX-637479	9765079754	KaleMedical	546	30	approved	2026-05-19T04:54:56.229Z	Sonali Balu Gaikwad	Newasa	2409:40c2:843a:6180:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	6.21% of 546, rounded from 33.89 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=546
+TRX-260919	7709549067	KaleMedical	374	30	approved	2026-05-19T05:04:42.321Z	Solat manik	Fata	2401:4900:52bf:6a32:1:0:f42e:e8b5	Pune, Maharashtra, IN	19.5247168	74.9553614	percentage-slab	9.44% of 374, rounded from 35.32 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=374
+TRX-490543	9890706769	KaleMedical	360	30	approved	2026-05-19T05:48:17.871Z	Ghawate Patil	Kharwandi	2401:4900:c0e6:5dd3:a52e:be04:605b:446a	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	10.21% of 360, rounded from 36.77 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=360
+TRX-322378	9921809151	KaleMedical	285	20	approved	2026-05-19T05:52:00.520Z	Khad kar babasaheb	Chanda	2401:4900:ad22:953:3ff3:d159:7ff7:5bdc	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	9.74% of 285, rounded from 27.76 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=285
+TRX-689126	7219477286	srujankidshouse119	100	10	approved	2026-05-19T09:48:50.090Z	Bappu Kakade	Newasa	Unknown	Unknown			percentage-slab	14.82% of 100, rounded from 14.82 to 10; raw=10; capped=10; caps=shopMax=100, globalMax=1000, purchaseTotal=100
+TRX-223779	7028639163	KaleMedical	670	50	approved	2026-05-19T10:30:02.272Z	Bharti Raut	"Usthal dumala NEWASA Ahmednagar
+Ahmednagar"	2409:40c2:8401:f968:50be:93ff:fea2:3c2f	Aurangabad, Maharashtra, IN	19.5246911	74.9553938	percentage-slab	8.53% of 670, rounded from 57.18 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=670
+TRX-563829	9803339393	KaleMedical	66	10	approved	2026-05-19T10:35:05.242Z	Pramod udavant	Newasa	2401:4900:503d:325a:bce5:aad8:132c:a3e4	Girnāre, Maharashtra, IN	20.074	73.6619	percentage-slab	13.58% of 66, rounded from 8.96 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=66
+TRX-899729	7666676551	KaleMedical	3194	260	approved	2026-05-19T11:15:31.204Z	Pagare mayuresh	Kharavadhi	2409:40c2:8015:b88c:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	8.27% of 3194, rounded from 264.24 to 260; raw=260; capped=260; caps=shopMax=500, globalMax=1000, purchaseTotal=3194
+TRX-177923	7028639163	KaleMedical	87	10	approved	2026-05-19T13:27:47.769Z	Bharti Raut	"Usthal dumala NEWASA Ahmednagar
+Ahmednagar"	2409:40c2:8401:f968:ccb4:4aff:fe6d:2a8e	Aurangabad, Maharashtra, IN	19.5246963	74.955378	percentage-slab	11.99% of 87, rounded from 10.43 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=87
+TRX-510353	9665619347	KaleMedical	433	40	approved	2026-05-19T15:03:03.451Z	Pandit shrikant	Newasa	2409:40c2:8425:d01f:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	10.27% of 433, rounded from 44.46 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=433
+TRX-487864	8149998973	KaleMedical	860	40	approved	2026-05-19T15:05:54.715Z	Pandit shrikant	Newasa	2409:40c2:8012:779f:b40e:5f46:6b34:cc14	Ahilyanagar, Maharashtra, IN	19.5247119	74.9553995	percentage-slab	5.34% of 860, rounded from 45.95 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=860
+TRX-374445	8149075075	KaleMedical	582	30	approved	2026-05-19T15:42:23.143Z	Mahesh arle	Lohankande gail newasa	2409:40c2:805f:50c0:20b7:36ff:fe46:80a9	Ahilyanagar, Maharashtra, IN	19.5246948	74.9553851	percentage-slab	6.69% of 582, rounded from 38.95 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=582
+TRX-979354	8149075075	KaleMedical	582	40	approved	2026-05-19T15:42:44.057Z	Mahesh arle	Lohankande gail newasa	2409:40c2:805f:50c0:20b7:36ff:fe46:80a9	Ahilyanagar, Maharashtra, IN	19.5246948	74.9553851	percentage-slab	8.38% of 582, rounded from 48.76 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=582
+TRX-593137	7420054912	KaleMedical	1283	100	approved	2026-05-19T16:00:26.641Z	Nhimabai take	Nevsa	2409:40c2:842b:ab53:20e6:8b0d:5e41:1ee8	Aurangabad, Maharashtra, IN	19.52487861	74.95553445	percentage-slab	8.09% of 1283, rounded from 103.85 to 100; raw=100; capped=100; caps=shopMax=500, globalMax=1000, purchaseTotal=1283
+TRX-475132	9421330042	KaleMedical	315	30	approved	2026-05-19T16:21:24.134Z	Khandagale bhausaheb	Newasa	2401:4900:1b14:72fa::122f:175c	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	9.68% of 315, rounded from 30.48 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=315
+TRX-386096	9579663062	KaleMedical	387	30	approved	2026-05-21T04:46:03.806Z	Anil Pawar	Gondegao	2409:40c2:8402:79d3:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	8.61% of 387, rounded from 33.32 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=387
+TRX-528005	9604269743	KaleMedical	237	30	approved	2026-05-21T04:48:45.041Z	Karjule	Tamaswadi	2401:4900:ad3e:8b29:986b:b9a2:889d:d74a	Pune, Maharashtra, IN	19.5246955	74.9553728	percentage-slab	13.05% of 237, rounded from 30.93 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=237
+TRX-353823	7507335297	KaleMedical	305	20	approved	2026-05-21T04:53:59.834Z	Sahil Ugale	Newasa	2401:4900:5022:fdb0:4da4:e96f:d69:213	Girnāre, Maharashtra, IN	19.5247957	74.9554185	percentage-slab	8.14% of 305, rounded from 24.82 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=305
+TRX-539605	8975988282	KaleMedical	1545	210	approved	2026-05-21T07:41:11.810Z	Vikas garute	Shivajinagar newasa	2401:4900:7c86:ca52:7196:4799:36f8:a633	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	14.01% of 1545, rounded from 216.44 to 210; raw=210; capped=210; caps=shopMax=500, globalMax=1000, purchaseTotal=1545
+TRX-556813	7507335297	KaleMedical	444	30	approved	2026-05-21T13:28:10.195Z	Sahil Ugale	Newasa	2401:4900:190d:d268:4189:6c8d:a847:34b5	Ahmedabad, Gujarat, IN	19.5248048	74.9554193	percentage-slab	8.52% of 444, rounded from 37.81 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=444
+TRX-158564	9028288335	KaleMedical	170	20	approved	2026-05-21T13:50:46.329Z	Mahesh mate	Newasa	2409:40c2:8011:fd35:a0eb:9ff:fe6c:509	Ahilyanagar, Maharashtra, IN	19.5246983	74.9553799	percentage-slab	12.87% of 170, rounded from 21.87 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=170
+TRX-821325	9975633360	KaleMedical	883	70	approved	2026-05-21T14:02:59.173Z	Vijay Deshmukh	Nevasa	2409:40c2:8008:ee90:f04b:2bff:fe5e:3add	Ahilyanagar, Maharashtra, IN	19.5248058	74.956072	percentage-slab	8.56% of 883, rounded from 75.59 to 70; raw=70; capped=70; caps=shopMax=500, globalMax=1000, purchaseTotal=883
+TRX-953251	9970343341	KaleMedical	2000	290	approved	2026-05-21T16:37:04.584Z	Gqyabqi whinfe	Ma8chora	2409:40c2:840f:9f7d:8000::	Aurangabad, Maharashtra, IN	19.5246911	74.9553774	percentage-slab	14.79% of 2000, rounded from 295.85 to 290; raw=290; capped=290; caps=shopMax=500, globalMax=1000, purchaseTotal=2000
+TRX-173271	9970343341	KaleMedical	2078	170	approved	2026-05-21T16:37:35.963Z	Gqyabqi whinfe	Ma8chora	2409:40c2:840f:9f7d:8000::	Aurangabad, Maharashtra, IN	19.5246911	74.9553774	percentage-slab	8.33% of 2078, rounded from 173.16 to 170; raw=170; capped=170; caps=shopMax=500, globalMax=1000, purchaseTotal=2078
+TRX-972938	9623487347	KaleMedical	308	20	approved	2026-05-22T04:32:16.209Z	Bansode arun	Bakupimlgon	2409:40c2:8050:3d69:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	8.94% of 308, rounded from 27.54 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=308
+TRX-273026	9307434883	KaleMedical	512	20	approved	2026-05-22T04:41:54.003Z	Krushna Gavhane	Mhasle	2409:40c2:843b:e406:b4cc:a4ff:feec:4178	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	5.73% of 512, rounded from 29.32 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=512
+TRX-991225	9975400485	KaleMedical	315	20	approved	2026-05-22T05:14:40.147Z	Shridhar anbhule	Godhegao	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	8.94% of 315, rounded from 28.17 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=315
+TRX-196571	8600551603	KaleMedical	748	70	approved	2026-05-22T06:36:07.123Z	Leetawati shahane	Nevasa	203.109.34.30	Gangapur, Maharashtra, IN	19.524695	74.9553801	percentage-slab	9.95% of 748, rounded from 74.41 to 70; raw=70; capped=70; caps=shopMax=500, globalMax=1000, purchaseTotal=748
+TRX-489321	9850392738	KaleMedical	339	50	approved	2026-05-22T07:32:30.021Z	Shrinivas Dahale	Ahilyanagar	2401:4900:c13c:df5f:840b:58ff:fe4c:340f	Patna, Bihar, IN	19.5247003	74.955381	percentage-slab	14.87% of 339, rounded from 50.39 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=339
+TRX-587970	8888141539	KaleMedical	308	20	approved	2026-05-22T11:13:53.212Z	संदीप उत्तम काळे	Limgav	152.56.4.215	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	8.10% of 308, rounded from 24.95 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=308
+TRX-625270	7020432047	KaleMedical	706	50	approved	2026-05-22T12:39:40.526Z	Patare aaji	Fata	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	7.26% of 706 (capped from 706), rounded from 51.23 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=706
+TRX-936992	8888648769	KaleMedical	708	40	approved	2026-05-22T13:08:01.065Z	Yash bhoge	Kharwandi	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	6.62% of 708 (capped from 708), rounded from 46.87 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=708
+TRX-903805	8261834877	KaleMedical	350	30	approved	2026-05-22T16:19:23.023Z	Rushikesh Tithe	Pachegoan	2401:4900:ac9b:af4d:8a48:18ba:d9db:74c4	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	8.65% of 350 (capped from 350), rounded from 30.28 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=350
+TRX-199564	9876876654	KaleMedical	101	10	approved	2026-05-22T16:41:49.422Z	abc	abc	2409:40c2:804d:5a9e:fd90:9f75:4bc2:f176	Ahilyanagar, Maharashtra, IN	19.31330108	74.62554931	percentage-slab	9.37% of 101 (capped from 101), rounded from 9.46 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=101
+TRX-743171	9890945315	KaleMedical	250	10	approved	2026-05-23T05:07:30.521Z	Ashok Gunjal	Ramdoh	2409:4081:1c4e:5676::8b8b:170c	Pune, Maharashtra, IN	19.5247074	74.9553912	percentage-slab	7.26% of 250 (capped from 250), rounded from 18.16 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=250
+TRX-650627	8055410003	KaleMedical	350	30	approved	2026-05-23T05:21:47.493Z	Shravani santosh sarangdhar	Newasa fata	2401:4900:5130:bc47::1024:48e1	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	9.77% of 350 (capped from 350), rounded from 34.21 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=350
+TRX-612862	9130614924	KaleMedical	340	20	approved	2026-05-23T05:37:22.436Z	Sonali Akshay Toge	Sankarwadi	2401:4900:c0fc:7d7:f40b:5c43:2933:1ce9	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	8.29% of 340 (capped from 340), rounded from 28.18 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=340
+TRX-998622	9689898023	KaleMedical	1117	110	approved	2026-05-23T05:40:03.556Z	Leena Kale	Newasa	2401:4900:ad42:592d:7b79:46b5:7bb7:3b9e	Pune, Maharashtra, IN	18.5211	73.8502	percentage-slab	9.88% of 1117 (capped from 1117), rounded from 110.34 to 110; raw=110; capped=110; caps=shopMax=500, globalMax=1000, purchaseTotal=1117
+TRX-317802	8265092141	KaleMedical	297	20	approved	2026-05-23T05:51:14.692Z	Yogita mate	Goglgao	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	7.97% of 297 (capped from 297), rounded from 23.67 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=297
+TRX-604808	8275452277	KaleMedical	1006	80	approved	2026-05-23T05:51:30.847Z	Rushikesh Mote	Vaishnavi Nivas, Vadala Mission, Ahmednagar, Maharashtra 414602, Maharashtra, India	2401:4900:57b5:2ef3:9882:e021:5bf6:47a3	Mumbai, Maharashtra, IN	19.5249301	74.95561018	percentage-slab	8.68% of 1006 (capped from 1006), rounded from 87.34 to 80; raw=80; capped=80; caps=shopMax=500, globalMax=1000, purchaseTotal=1006
+TRX-699422	9284247542	KaleMedical	292	20	approved	2026-05-23T05:57:52.623Z	पेटे	नेवासा	2409:4081:68b:f84c::34:38a4	Pune, Maharashtra, IN	19.5246958	74.9553808	percentage-slab	8.67% of 292 (capped from 292), rounded from 25.31 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=292
+TRX-106733	9762290354	KaleMedical	213	10	approved	2026-05-23T06:25:17.730Z	Jitendra kurhe	"अहील्यानगर , नेवासा खुर्द
+तालुका. नेवासा
+जिल्हा. अहमदनगर"	2401:4900:561a:7ce8:941e:f9ff:fee5:e615	Pune, Maharashtra, IN	19.5244088	74.9554	percentage-slab	8.23% of 213 (capped from 213), rounded from 17.54 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=213
+TRX-264804	9822600624	KaleMedical	566	30	approved	2026-05-23T06:46:39.854Z	Sandesh Kale	Newasa	2401:4900:79df:a156:152d:d0dd:81ff:7058	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	5.43% of 566 (capped from 566), rounded from 30.72 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=566
+TRX-493640	9421359450	KaleMedical	1230	130	approved	2026-05-23T07:15:27.162Z	Dipak ramkisan kute	Near mulai mata mandir Handinimgaon newasa ahilyanager	2401:4900:c0d8:2ebd:e02b:f738:9866:118	Pune, Maharashtra, IN	19.5246887	74.9553766	percentage-slab	11.13% of 1230 (capped from 1230), rounded from 136.91 to 130; raw=130; capped=130; caps=shopMax=500, globalMax=1000, purchaseTotal=1230
+TRX-241599	9890945315	KaleMedical	740	40	approved	2026-05-23T07:22:56.141Z	Ashok Gunjal	Ramdoh	2409:4081:1c4e:5676::8b8b:170c	Pune, Maharashtra, IN	19.5246997	74.9553788	percentage-slab	5.92% of 740 (capped from 740), rounded from 43.82 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=740
+TRX-606730	9970763749	KaleMedical	1267	100	approved	2026-05-23T08:57:44.048Z	Gayabhai chonde	Mal8chora	2409:4081:614:2b52::183c:30a0	Pune, Maharashtra, IN	19.524694	74.9553709	percentage-slab	7.90% of 1267 (capped from 1267), rounded from 100.11 to 100; raw=100; capped=100; caps=shopMax=500, globalMax=1000, purchaseTotal=1267
+TRX-113044	9637640540	KaleMedical	301	20	approved	2026-05-23T11:36:47.226Z	दत्तात्रय शिरसाठ	मुकिंदपू नेवासा फाटा	2401:4900:57c0:b3b8:9515:2a13:1e7e:a19d	Mumbai, Maharashtra, IN	19.0748	72.8856	percentage-slab	9.69% of 301 (capped from 301), rounded from 29.17 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=301
+TRX-800451	8421554646	KaleMedical	291	20	approved	2026-05-23T13:28:58.312Z	gorakshnath Gandal	nevasa	2409:40c2:8411:e7f7:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	8.32% of 291 (capped from 291), rounded from 24.21 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=291
+TRX-279979	8793294896	srujankidshouse119	100000	100	approved	2026-05-23T13:40:53.152Z	Vijsy	Newasa	Unknown	Unknown			percentage-slab	6.50% of 100000 (capped from 100000), rounded from 6497.64 to 6490; raw=6490; capped=100; caps=shopMax=100, globalMax=1000, purchaseTotal=100000
+TRX-735999	8668395213	KaleMedical	1099	80	approved	2026-05-23T13:43:47.425Z	हजारबी कुरैशी	नेवासा	2409:40c2:8015:2a3e:b05e:e3ff:fe20:de8b	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	7.35% of 1099 (capped from 1099), rounded from 80.72 to 80; raw=80; capped=80; caps=shopMax=500, globalMax=1000, purchaseTotal=1099
+TRX-359803	9309811030	sandeshagromachinery910	2450	100	approved	2026-05-23T14:12:32.680Z	Aaditya kale	Ustal	203.109.34.27	Gangapur, Maharashtra, IN	19.4984404	74.9439403	percentage-slab	5.00% of 2450 (capped from 2450), rounded from 122.50 to 120; raw=120; capped=100; caps=shopMax=100, globalMax=1000, purchaseTotal=2450
+TRX-108909	8080254143	KaleMedical	396	30	approved	2026-05-23T15:16:19.887Z	निर्मला औटी	"सुरेगावगंगा
+तालुका नेवासा जिल्हा आहिलयानगर"	2409:4081:1e4b:3fb8::df4b:d910	Pune, Maharashtra, IN	19.5246933	74.955382	percentage-slab	8.67% of 396 (capped from 396), rounded from 34.34 to 30; raw=30; capped=30; caps=shopMax=500, globalMax=1000, purchaseTotal=396
+TRX-389358	9822259143	KaleMedical	200	10	approved	2026-05-23T16:01:49.779Z	Ravindra kute	Newasa	2401:4900:c123:371f:64dc:cff:fe26:6752	Patna, Bihar, IN	25.5834	85.0681	percentage-slab	9.33% of 200 (capped from 200), rounded from 18.67 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=200
+TRX-555760	9762121222	KaleMedical	120	10	approved	2026-05-23T16:14:06.442Z	Mahesh nikam	Newasa	2409:40c2:840d:5998:dd9e:24bc:aafb:fba8	Aurangabad, Maharashtra, IN	19.52481467	74.95559259	percentage-slab	6.55% of 120 (capped from 120), rounded from 7.86 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=120
+TRX-886921	7507061934	KaleMedical	298	10	approved	2026-05-24T04:41:03.652Z	Kanta ajay ghule	Kradgao	117.223.81.197	Rajkot, Gujarat, IN	22.2904	70.7915	percentage-slab	6.17% of 298 (capped from 298), rounded from 18.39 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=298
+TRX-891400	9325397137	sandeshagromachinery910	7600	100	approved	2026-05-24T05:16:45.673Z	Raj Tours	Sambhajinagar	2409:40c2:8430:d232:8000::	Aurangabad, Maharashtra, IN	19.8776	75.3423	percentage-slab	5.00% of 7600 (capped from 7600), rounded from 380.00 to 380; raw=380; capped=100; caps=shopMax=100, globalMax=1000, purchaseTotal=7600
+TRX-637009	9860152535	KaleMedical	889	40	approved	2026-05-24T06:04:11.486Z	Bhagwan Agale	At post mukindpur tal nevasa dist ahilyanagar	2402:8100:3003:95e1:9855:4cda:fc43:9506	Caranzalem, Goa, IN	19.5246923	74.9553881	percentage-slab	5.37% of 889 (capped from 889), rounded from 47.73 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=889
+TRX-517238	9689898020	KaleMedical	2012	160	approved	2026-05-24T06:08:43.135Z	Subhadra jadhav	Nevasa	2401:4900:ad53:c8fa:340e:2fff:feb9:254e	Pune, Maharashtra, IN	19.5246724	74.9553871	percentage-slab	8.33% of 2012 (capped from 2012), rounded from 167.51 to 160; raw=160; capped=160; caps=shopMax=500, globalMax=1000, purchaseTotal=2012
+TRX-314153	9822600624	KaleMedical	300	20	approved	2026-05-24T09:19:53.539Z	Sandesh Kale	Newasa	2401:4900:79dd:96c2:e034:c7ee:51c8:a6b8	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	8.37% of 300 (capped from 300), rounded from 25.10 to 20; raw=20; capped=20; caps=shopMax=500, globalMax=1000, purchaseTotal=300
+TRX-864484	8080847994	KaleMedical	1225	110	approved	2026-05-24T09:29:00.987Z	वनीता ससाने	वडाळा बहीरोबा	2409:40c2:8012:1e70:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	9.11% of 1225 (capped from 1225), rounded from 111.65 to 110; raw=110; capped=110; caps=shopMax=500, globalMax=1000, purchaseTotal=1225
+TRX-842608	9822600624	jivanoptical174	563	50	approved	2026-05-24T10:41:11.624Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	9.63% of 563 (capped from 563), rounded from 54.23 to 50; raw=50; capped=50; caps=shopMax=100, globalMax=1000, purchaseTotal=563
+TRX-995527	9822600624	sandeshagromachinery910	4000	200	approved	2026-05-24T10:42:22.660Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	5.00% of 4000 (capped from 4000), rounded from 200.00 to 200; raw=200; capped=200; caps=shopMax=1000, globalMax=1000, purchaseTotal=4000
+TRX-590613	9890496879	sandeshagromachinery910	8500	420	approved	2026-05-24T10:43:13.406Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	5.00% of 8500 (capped from 8500), rounded from 425.00 to 420; raw=420; capped=420; caps=shopMax=1000, globalMax=1000, purchaseTotal=8500
+TRX-770229	9890496876	jivanoptical174	563	30	approved	2026-05-24T11:12:00.286Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	5.55% of 563 (capped from 563), rounded from 31.26 to 30; raw=30; capped=30; caps=shopMax=100, globalMax=1000, purchaseTotal=563
+TRX-523753	9822019959	jivanoptical174	750	40	approved	2026-05-24T11:14:39.754Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	6.25% of 750 (capped from 750), rounded from 46.86 to 40; raw=40; capped=40; caps=shopMax=100, globalMax=1000, purchaseTotal=750
+TRX-856543	9423459355	jivanoptical174	1260	100	approved	2026-05-24T11:15:58.043Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	11.27% of 1260 (capped from 1260), rounded from 141.98 to 140; raw=140; capped=100; caps=shopMax=100, globalMax=1000, purchaseTotal=1260
+TRX-477328	9970072641	jivanoptical174	3600	100	approved	2026-05-24T11:39:41.482Z	Sandesh Kale	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	6.45% of 3600 (capped from 3600), rounded from 232.37 to 230; raw=230; capped=100; caps=shopMax=100, globalMax=1000, purchaseTotal=3600
+TRX-996991	7507335297	KaleMedical	918	50	approved	2026-05-24T11:59:00.853Z	Sahil Ugale	Newasa	2401:4900:1b8c:d3f8:ddb9:691e:5196:9b3a	Satara, Maharashtra, IN	19.5245967	74.955374	percentage-slab	5.82% of 918 (capped from 918), rounded from 53.44 to 50; raw=50; capped=50; caps=shopMax=500, globalMax=1000, purchaseTotal=918
+TRX-181438	9970072641	KaleMedical	150	10	approved	2026-05-24T11:59:44.290Z	Kale s	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	9.29% of 150 (capped from 150), rounded from 13.93 to 10; raw=10; capped=10; caps=shopMax=500, globalMax=1000, purchaseTotal=150
+TRX-990708	9970072641	srujankidshouse119	100	10	approved	2026-05-24T12:04:05.619Z	Kale s	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	6.69% of 100 (capped from 100), rounded from 6.69 to 10; raw=10; capped=10; caps=shopMax=1000, globalMax=1000, purchaseTotal=100
+TRX-538743	9970072641	PatilStore	690	60	approved	2026-05-24T12:05:01.147Z	Kale s	Newasa	2401:4900:79d4:dd93:1c36:ecaf:ae21:e1cb	Ahmedabad, Gujarat, IN	23.0276	72.5871	percentage-slab	9.38% of 690 (capped from 690), rounded from 64.72 to 60; raw=60; capped=60; caps=shopMax=100, globalMax=1000, purchaseTotal=690
+TRX-950450	9960593004	KaleMedical	835	70	approved	2026-05-24T14:43:31.857Z	Rahul choudhary	Khupati	203.109.34.30	Gangapur, Maharashtra, IN	19.6972	75.0105	percentage-slab	9.01% of 835 (capped from 835), rounded from 75.24 to 70; raw=70; capped=70; caps=shopMax=500, globalMax=1000, purchaseTotal=835
+TRX-339404	9921933399	KaleMedical	594	40	approved	2026-05-24T14:46:00.866Z	Chandrakant Darandale	"Mukindpur tahsil newasa
+Nipunge vasti"	2409:40c2:8041:ff67:8000::	Ahilyanagar, Maharashtra, IN	19.0911	74.7312	percentage-slab	6.77% of 594 (capped from 594), rounded from 40.20 to 40; raw=40; capped=40; caps=shopMax=500, globalMax=1000, purchaseTotal=594`;
+
+function parseTSV(text: string): any[] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === '\t' && !inQuotes) {
+      row.push(cell);
+      cell = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      row.push(cell);
+      if (row.length > 1 || (row.length === 1 && row[0] !== '')) {
+        lines.push(row);
+      }
+      row = [];
+      cell = '';
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+    } else {
+      cell += char;
+    }
+  }
+  if (cell !== '' || row.length > 0) {
+    row.push(cell);
+    lines.push(row);
+  }
+  return lines;
+}
+
+const rows = parseTSV(rawTsv);
+const headers = rows[0].map(h => h.trim());
+
+const parsedTransactions: Transaction[] = [];
+
+for (let r = 1; r < rows.length; r++) {
+  const row = rows[r];
+  if (row.length < 5 || !row[0]) continue;
+  
+  const txn: any = {};
+  headers.forEach((h, colIdx) => {
+    const val = (row[colIdx] || '').trim();
+    if (h === 'billAmount' || h === 'reward') {
+      txn[h] = parseFloat(val) || 0;
+    } else if (h === 'latitude' || h === 'longitude') {
+      txn[h] = val ? parseFloat(val) : null;
+    } else if (h === 'status') {
+      txn[h] = (val === 'approved' || val === 'blocked') ? val : 'approved';
+    } else {
+      txn[h] = val;
+    }
+  });
+  parsedTransactions.push(txn);
+}
+
+export const transactions: Transaction[] = parsedTransactions;
 
 export const fraudSignals: FraudSignal[] = [];

@@ -6,6 +6,7 @@ import {
   BarChart3,
   CheckCircle2,
   Download,
+  Eye,
   Gift,
   Key,
   QrCode,
@@ -26,6 +27,7 @@ import { submitReward } from "./rewardEngine";
 import { isSheetsConfigured, loadPublicData, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop, lookupSheetsCustomer } from "./sheetsApi";
 import type { FraudSignal, Session, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
+import InvoiceModal from "./InvoiceModal";
 
 type View = "customer" | "shop" | "admin";
 type ActiveSession = Session | null;
@@ -158,6 +160,7 @@ function App() {
     isSheetsConfigured ? "Connecting to Google Sheets..." : "Local demo mode"
   );
   const [hasLoadedArchive, setHasLoadedArchive] = useState(false);
+  const [invoiceTxn, setInvoiceTxn] = useState<Transaction | null>(null);
 
   useEffect(() => {
     if (isSheetsConfigured) {
@@ -274,6 +277,7 @@ function App() {
                 shops={shops}
                 transactions={transactions}
                 setSelectedShopId={setSelectedShopId}
+                onViewInvoice={setInvoiceTxn}
               />
             ) : (
               <section className="dashboard">
@@ -300,6 +304,7 @@ function App() {
                 transactions={transactions}
                 setSelectedShopId={setSelectedShopId}
                 isShopAdmin
+                onViewInvoice={setInvoiceTxn}
               />
             ) : (
               <section className="dashboard">
@@ -332,10 +337,12 @@ function App() {
               fraudSignals={fraudSignals}
               shopPasswords={shopPasswords}
               session={session}
+              onViewInvoice={setInvoiceTxn}
             />
           </div>
         )
       )}
+      <InvoiceModal transaction={invoiceTxn} shops={shops} onClose={() => setInvoiceTxn(null)} />
     </main>
   );
 }
@@ -647,12 +654,14 @@ function ShopDashboard({
   transactions,
   setSelectedShopId,
   isShopAdmin,
+  onViewInvoice,
 }: {
   shop: Shop;
   shops: Shop[];
   transactions: Transaction[];
   setSelectedShopId: (shopId: string) => void;
   isShopAdmin?: boolean;
+  onViewInvoice?: (transaction: Transaction) => void;
 }) {
   const [qrUrl, setQrUrl] = useState("");
   const shopTransactions = transactions.filter((transaction) => transaction.shopId === shop.id);
@@ -725,7 +734,7 @@ function ShopDashboard({
       </div>
       
       <div style={{ marginTop: '1.5rem' }}>
-        <TransactionTable transactions={shopTransactions} hideShopFilter />
+        <TransactionTable transactions={shopTransactions} hideShopFilter onViewInvoice={onViewInvoice} shops={shops} />
       </div>
     </section>
   );
@@ -738,6 +747,7 @@ function AdminDashboard({
   fraudSignals,
   shopPasswords,
   session,
+  onViewInvoice,
 }: {
   shops: Shop[];
   setShops: (shops: Shop[]) => void;
@@ -745,6 +755,7 @@ function AdminDashboard({
   fraudSignals: FraudSignal[];
   shopPasswords: Record<string, string>;
   session: ActiveSession;
+  onViewInvoice?: (transaction: Transaction) => void;
 }) {
   const [isAddingShop, setIsAddingShop] = useState(false);
   const [newShopName, setNewShopName] = useState("");
@@ -936,7 +947,7 @@ function AdminDashboard({
 
       <AdminReports transactions={transactions} shops={shops} />
 
-      <TransactionTable transactions={transactions} shops={shops} />
+      <TransactionTable transactions={transactions} shops={shops} onViewInvoice={onViewInvoice} />
     </section>
   );
 }
@@ -1142,11 +1153,13 @@ function TransactionTable({
   shops = [],
   compact = false,
   hideShopFilter = false,
+  onViewInvoice,
 }: {
   transactions: Transaction[];
   shops?: Shop[];
   compact?: boolean;
   hideShopFilter?: boolean;
+  onViewInvoice?: (transaction: Transaction) => void;
 }) {
   const [query, setQuery] = useState("");
   const [shopFilter, setShopFilter] = useState("all");
@@ -1328,6 +1341,7 @@ function TransactionTable({
               <th>Purchase</th>
               <th>Mudra</th>
               <th>Visits</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -1341,11 +1355,21 @@ function TransactionTable({
                 <td>{formatPlainNumber(transaction.billAmount)}</td>
                 <td>{formatPlainNumber(transaction.reward)}</td>
                 <td>{visitsByMobile.get(transaction.mobile) || 1}</td>
+                <td>
+                  <button
+                    className="btn-view-invoice"
+                    onClick={() => onViewInvoice?.(transaction)}
+                    type="button"
+                  >
+                    <Eye size={13} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                    Invoice
+                  </button>
+                </td>
               </tr>
             ))}
             {visibleTransactions.length === 0 && (
               <tr>
-                <td colSpan={compact ? 6 : 8} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
+                <td colSpan={compact ? 7 : 9} style={{ textAlign: "center", padding: "1rem" }}>No transactions match these filters.</td>
               </tr>
             )}
           </tbody>
