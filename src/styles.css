@@ -1081,9 +1081,9 @@ th {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: white;
+  background: #ef4444 !important;
+  color: white !important;
+  border: none !important;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -1091,14 +1091,15 @@ th {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 99;
+  z-index: 150 !important;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 .invoice-modal-close-btn:hover {
-  background: rgba(239, 68, 68, 0.85);
-  color: white;
-  transform: scale(1.05);
+  background: #dc2626 !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
 }
 
 .invoice-card-header-view {
