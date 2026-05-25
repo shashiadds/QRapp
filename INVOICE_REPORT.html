@@ -796,7 +796,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 15;
+      z-index: 99;
       transition: all 0.2s;
     }
 
@@ -1031,9 +1031,6 @@
   <!-- Interactive Invoice Modal Overlay -->
   <div class="modal-overlay" id="invoiceModal">
     <div class="invoice-card">
-      <button class="modal-close-btn" id="modalCloseBtn" title="Close modal">
-        <i data-lucide="x"></i>
-      </button>
       
       <!-- Receipt Header -->
       <div class="invoice-card-header">
@@ -1140,6 +1137,9 @@
 
       <!-- Action Buttons Footer -->
       <div class="modal-footer">
+        <button class="btn" id="modalFooterCloseBtn">
+          Close
+        </button>
         <button class="btn" id="printInvoiceBtn">
           <i data-lucide="printer"></i> Print Invoice
         </button>
@@ -1147,6 +1147,10 @@
           <i data-lucide="copy"></i> Copy Details
         </button>
       </div>
+
+      <button class="modal-close-btn" id="modalCloseBtn" title="Close modal">
+        <i data-lucide="x"></i>
+      </button>
     </div>
   </div>
 
@@ -1701,8 +1705,16 @@ Nipunge vasti"	2409:40c2:8041:ff67:8000::	Ahilyanagar, Maharashtra, IN	19.0911	7
 
       // Modal listeners
       document.getElementById('modalCloseBtn').addEventListener('click', closeInvoiceModal);
+      document.getElementById('modalFooterCloseBtn').addEventListener('click', closeInvoiceModal);
       document.getElementById('invoiceModal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('invoiceModal')) {
+          closeInvoiceModal();
+        }
+      });
+
+      // Escape key listener
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
           closeInvoiceModal();
         }
       });

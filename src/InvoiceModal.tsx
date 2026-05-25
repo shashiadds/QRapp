@@ -45,6 +45,18 @@ export default function InvoiceModal({ transaction, shops, onClose }: InvoiceMod
       });
   }, [transaction]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   if (!transaction) return null;
 
   // Format date helper
@@ -130,10 +142,6 @@ Verified Digital Receipt.
   return (
     <div className="invoice-modal-overlay" onClick={handleOverlayClick}>
       <div className="invoice-card-container" ref={modalRef}>
-        <button className="invoice-modal-close-btn" onClick={onClose} aria-label="Close invoice dialog">
-          <X size={20} />
-        </button>
-
         {/* Invoice Card Header */}
         <div className="invoice-card-header-view">
           <div className="invoice-header-icon-wrap">
@@ -251,6 +259,9 @@ Verified Digital Receipt.
 
         {/* Action Footer */}
         <div className="invoice-modal-footer">
+          <button className="secondary-action invoice-action-btn invoice-close-btn-footer" onClick={onClose}>
+            Close
+          </button>
           <button className="secondary-action invoice-action-btn" onClick={handlePrint}>
             <Printer size={16} />
             Print Invoice
@@ -260,6 +271,10 @@ Verified Digital Receipt.
             {copied ? "Copied!" : "Copy Details"}
           </button>
         </div>
+
+        <button className="invoice-modal-close-btn" onClick={onClose} aria-label="Close invoice dialog">
+          <X size={20} />
+        </button>
       </div>
     </div>
   );
