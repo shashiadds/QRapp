@@ -1050,9 +1050,9 @@ th {
   background: #ffffff;
   color: var(--text-dark);
   width: 100%;
-  max-width: 480px;
-  border-radius: 24px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 390px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   position: relative;
   font-family: 'Inter', sans-serif;
@@ -1105,7 +1105,7 @@ th {
 .invoice-card-header-view {
   background: #111827;
   color: white;
-  padding: 2.25rem 2rem 2.5rem 2rem;
+  padding: 1.75rem 1.5rem 2rem 1.5rem;
   text-align: center;
   position: relative;
   border-bottom: 2px dashed #374151;
@@ -1127,21 +1127,21 @@ th {
 .invoice-card-header-view::after { right: -10px; }
 
 .invoice-header-icon-wrap {
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
   background: var(--accent-success);
   color: white;
-  border-radius: 14px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem auto;
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+  margin: 0 auto 0.75rem auto;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 
 .invoice-card-header-view h3 {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
 }
@@ -1174,19 +1174,19 @@ th {
 }
 
 .invoice-card-body-view {
-  padding: 2rem;
+  padding: 1.25rem 1.5rem;
   background: white;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1.2rem;
 }
 
 .invoice-card-meta-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
+  gap: 1rem;
   border-bottom: 1px solid #f3f4f6;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.1rem;
 }
 
 .invoice-meta-item span {
@@ -1213,7 +1213,7 @@ th {
 
 .invoice-cust-section {
   border-bottom: 1px solid #f3f4f6;
-  padding-bottom: 1.5rem;
+  padding-bottom: 1.1rem;
 }
 
 .invoice-cust-section h4 {
@@ -1221,7 +1221,7 @@ th {
   font-size: 0.85rem;
   text-transform: uppercase;
   color: #4b5563;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
@@ -1254,7 +1254,7 @@ th {
 .invoice-breakdown-box {
   background: #f9fafb;
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   border: 1px solid #f3f4f6;
 }
 
@@ -1262,7 +1262,7 @@ th {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem 0;
+  padding: 0.45rem 0;
   font-size: 0.9rem;
 }
 
@@ -1312,7 +1312,7 @@ th {
   border: 1px dashed #e5e7eb;
   background: #fdfdfd;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .invoice-footprint-box h4 {
@@ -1394,7 +1394,7 @@ th {
 
 .invoice-modal-footer {
   background: #f9fafb;
-  padding: 1.25rem 2rem;
+  padding: 1rem 1.5rem;
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;

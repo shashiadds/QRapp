@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import QRCode from "qrcode";
 import { X, Trophy, User, Globe, Sparkles, Printer, Copy, Check } from "lucide-react";
 import type { Shop, Transaction } from "./types";
 
@@ -10,7 +9,6 @@ interface InvoiceModalProps {
 }
 
 export default function InvoiceModal({ transaction, shops, onClose }: InvoiceModalProps) {
-  const [qrUrl, setQrUrl] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -25,25 +23,6 @@ export default function InvoiceModal({ transaction, shops, onClose }: InvoiceMod
   };
 
   const shopName = shop?.name || formatShopName(transaction?.shopId);
-
-  useEffect(() => {
-    if (!transaction) return;
-
-    const verificationUrl = `https://smartmudra.com/verify?txn=${transaction.id}&shop=${transaction.shopId}&reward=${transaction.reward}&hash=${btoa(transaction.id).substring(0, 8)}`;
-
-    QRCode.toDataURL(verificationUrl, {
-      margin: 1,
-      width: 160,
-      color: {
-        dark: "#111827",
-        light: "#ffffff",
-      },
-    })
-      .then(setQrUrl)
-      .catch((err) => {
-        console.error("Failed to generate invoice verification QR code:", err);
-      });
-  }, [transaction]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -145,7 +124,7 @@ Verified Digital Receipt.
         {/* Invoice Card Header */}
         <div className="invoice-card-header-view">
           <div className="invoice-header-icon-wrap">
-            <Trophy size={28} />
+            <Trophy size={22} />
           </div>
           <h3>{shopName.toUpperCase()}</h3>
           <span className="invoice-shop-sub">Shop ID: {transaction.shopId}</span>
@@ -241,19 +220,6 @@ Verified Digital Receipt.
                 <strong>{transaction.longitude ?? "N/A"}</strong>
               </div>
             </div>
-          </div>
-
-          {/* Verification Section */}
-          <div className="invoice-verification-section">
-            <div className="invoice-qr-canvas-holder">
-              {qrUrl ? (
-                <img src={qrUrl} alt="Transaction verification QR code" width={120} height={120} />
-              ) : (
-                <div className="invoice-qr-loading">Generating...</div>
-              )}
-            </div>
-            <span>Digital Verification Audit</span>
-            <p>Scan to verify this transaction is cryptographically logged on the Smart Mudra Network.</p>
           </div>
         </div>
 
