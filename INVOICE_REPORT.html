@@ -782,12 +782,23 @@
       border-radius: 6px;
     }
 
+    .modal-footer .btn:not(.btn-primary) {
+      background: #f3f4f6;
+      color: #1f2937;
+      border: 1px solid #e5e7eb;
+    }
+
+    .modal-footer .btn:not(.btn-primary):hover {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
     .modal-close-btn {
       position: absolute;
       top: 1rem;
       right: 1rem;
       background: rgba(255, 255, 255, 0.15);
-      border: none;
+      border: 1px solid rgba(255, 255, 255, 0.25);
       color: white;
       width: 32px;
       height: 32px;
@@ -801,7 +812,8 @@
     }
 
     .modal-close-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(239, 68, 68, 0.85);
+      color: white;
       transform: scale(1.05);
     }
 
