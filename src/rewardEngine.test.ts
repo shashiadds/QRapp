@@ -420,3 +420,63 @@ describe("submitReward", () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe("Gift reward shops (TestKirana)", () => {
+  const giftShop = shop({
+    id: "TestKirana",
+    name: "Test Kirana",
+    maxReward: 1000,
+    rewardType: "gift",
+    rewardBands: [
+      { minBill: 500, maxBill: 999, giftItems: "Sugar and tea" },
+      { minBill: 1000, maxBill: 1999, giftItems: "Colgate and biscuits" },
+      { minBill: 2000, giftItems: "300 cashback OR next time 20% discount" }
+    ],
+  });
+
+  it("calculates 0 points for any purchase but returns gift details in calculation details", () => {
+    // Under 500
+    const r1 = calculateReward(giftShop, 400);
+    expect(r1).toBe(0);
+
+    // 500 - 999
+    const r2 = calculateReward(giftShop, 600);
+    expect(r2).toBe(0);
+  });
+
+  it("returns correct transaction details when submitting a gift shop transaction", () => {
+    const result = submitReward(
+      giftShop,
+      "Neha Patil",
+      "Pune",
+      "9876543210",
+      750,
+      [],
+      visitorContext
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.transaction.reward).toBe(0);
+      expect(result.transaction.rewardType).toBe("gift");
+      expect(result.transaction.giftItems).toBe("Sugar and tea");
+    }
+  });
+
+  it("returns fallback details when bill amount is below the minimum slab", () => {
+    const result = submitReward(
+      giftShop,
+      "Neha Patil",
+      "Pune",
+      "9876543210",
+      300,
+      [],
+      visitorContext
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.transaction.reward).toBe(0);
+      expect(result.transaction.rewardType).toBe("gift");
+      expect(result.transaction.giftItems).toBe("");
+    }
+  });
+});

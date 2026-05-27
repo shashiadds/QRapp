@@ -29,7 +29,7 @@ const SHOP_MAX_BILL_AMOUNTS = {
 };
 
 const HEADERS = {
-  shops: ["id", "name", "category", "status", "maxReward", "maxBillAmount", "costPerScan", "rewardBands"],
+  shops: ["id", "name", "category", "status", "maxReward", "maxBillAmount", "costPerScan", "rewardBands", "rewardType"],
   transactions: [
     "id",
     "mobile",
@@ -46,6 +46,8 @@ const HEADERS = {
     "location",
     "latitude",
     "longitude",
+    "rewardType",
+    "giftItems",
   ],
   transactionArchive: [
     "id",
@@ -63,6 +65,8 @@ const HEADERS = {
     "location",
     "latitude",
     "longitude",
+    "rewardType",
+    "giftItems",
   ],
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
   admins: ["username", "password", "passwordSalt", "passwordHash", "role", "shopId"],
@@ -518,7 +522,8 @@ function addShop(shopData) {
       { reward: 10, probability: 80 },
       { reward: 50, probability: 15, minBill: 100 },
       { reward: 100, probability: 5, minBill: 500 }
-    ])
+    ]),
+    rewardType: String(shopData.rewardType || "mudra")
   };
 
   appendObject(SHEETS.shops, HEADERS.shops, newShop);
@@ -614,6 +619,8 @@ function submitReward(
     reward: rewardCalculation.points,
     rewardRule: rewardCalculation.rule,
     rewardDetails: rewardCalculation.details,
+    rewardType: rewardCalculation.rewardType,
+    giftItems: rewardCalculation.giftItems || "",
     status: "approved",
     timestamp: new Date().toISOString(),
   };
@@ -627,6 +634,38 @@ function calculateReward(shop, billAmount) {
 }
 
 function calculateRewardDetails(shop, billAmount) {
+  if (shop.rewardType === "gift") {
+    let matchingBand = null;
+    if (shop.rewardBands && shop.rewardBands.length > 0) {
+      for (let i = 0; i < shop.rewardBands.length; i++) {
+        const band = shop.rewardBands[i];
+        const minB = Number(band.minBill || 0);
+        const maxB = band.maxBill ? Number(band.maxBill) : null;
+        if (billAmount >= minB && (maxB === null || billAmount <= maxB)) {
+          matchingBand = band;
+          break;
+        }
+      }
+    }
+    if (matchingBand) {
+      return {
+        points: 0,
+        rule: "gift-reward-band",
+        details: matchingBand.giftItems || "Gift Reward",
+        rewardType: "gift",
+        giftItems: matchingBand.giftItems || "",
+      };
+    } else {
+      return {
+        points: 0,
+        rule: "gift-reward-fallback",
+        details: "No gift eligible (Min purchase ₹500)",
+        rewardType: "gift",
+        giftItems: "",
+      };
+    }
+  }
+
   const rules = getShopRewardRules(shop);
   let highestMaxBill = 0;
   for (let i = 0; i < rules.length; i++) {
@@ -865,6 +904,7 @@ function finalizePoints(amount, shop, billAmount, source) {
       points: finalPoints,
       rule: source.rule,
       details: source.details + "; raw=" + amount + "; capped=" + finalPoints + "; caps=" + caps.join(", "),
+      rewardType: "mudra",
     };
   }
 
@@ -874,6 +914,7 @@ function finalizePoints(amount, shop, billAmount, source) {
     points: finalPoints,
     rule: source.rule,
     details: source.details + "; raw=" + amount + "; capped=" + finalPoints + "; caps=" + caps.join(", "),
+    rewardType: "mudra",
   };
 }
 
@@ -912,6 +953,7 @@ function readShops() {
       maxBillAmount: resolveMaxBillAmount(id, String(row.name), row.maxBillAmount),
       costPerScan: Number(row.costPerScan),
       rewardBands: JSON.parse(row.rewardBands || "[]"),
+      rewardType: (row.rewardType && String(row.rewardType).trim()) || "mudra",
     };
   });
 }
@@ -946,6 +988,8 @@ function readTransactions(includeArchive) {
       reward: Number(row.reward),
       rewardRule: String(row.rewardRule || ""),
       rewardDetails: String(row.rewardDetails || ""),
+      rewardType: (row.rewardType && String(row.rewardType).trim()) || "mudra",
+      giftItems: String(row.giftItems || ""),
       status: String(row.status),
       timestamp: String(row.timestamp),
     }))

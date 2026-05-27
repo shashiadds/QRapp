@@ -106,6 +106,21 @@ export const shops: Shop[] = [
     rewardBands: [
       { minBill: 50, maxBill: 10000, minPercent: 5, maxPercent: 12 }
     ]
+  },
+  {
+    id: "TestKirana",
+    name: "Test Kirana",
+    category: "Kirana Shop",
+    status: "active",
+    maxReward: 1000,
+    maxBillAmount: 100000,
+    costPerScan: 10,
+    rewardType: "gift",
+    rewardBands: [
+      { minBill: 500, maxBill: 999, giftItems: "250 gm sugar, 100gm बडीशोप, 100gm tea powder" },
+      { minBill: 1000, maxBill: 1999, giftItems: "50 gm Colgate, Parle biscuit ₹50, Cadbury ₹50" },
+      { minBill: 2000, giftItems: "300 cashback OR next time 20% discount" }
+    ]
   }
 ];
 

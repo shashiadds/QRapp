@@ -24,6 +24,8 @@ type RewardCalculation = {
   points: number;
   rule: string;
   details: string;
+  rewardType: "mudra" | "gift";
+  giftItems?: string;
 };
 
 export function calculateReward(shop: Shop, billAmount: number): number {
@@ -31,6 +33,29 @@ export function calculateReward(shop: Shop, billAmount: number): number {
 }
 
 function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculation {
+  if (shop.rewardType === "gift") {
+    const matchingBand = shop.rewardBands.find(
+      (band) => billAmount >= (band.minBill ?? 0) && (!band.maxBill || billAmount <= band.maxBill)
+    );
+    if (matchingBand) {
+      return {
+        points: 0,
+        rule: "gift-reward-band",
+        details: matchingBand.giftItems || "Gift Reward",
+        rewardType: "gift",
+        giftItems: matchingBand.giftItems || "",
+      };
+    } else {
+      return {
+        points: 0,
+        rule: "gift-reward-fallback",
+        details: "No gift eligible (Min purchase ₹500)",
+        rewardType: "gift",
+        giftItems: "",
+      };
+    }
+  }
+
   const rules = getShopRewardRules(shop);
   let highestMaxBill = 0;
   for (const rule of rules) {
@@ -193,6 +218,7 @@ function finalizePoints(
       points: finalPoints,
       rule: source.rule,
       details: `${source.details}; raw=${amount}; capped=${finalPoints}; caps=${caps.join(", ")}`,
+      rewardType: "mudra",
     };
   }
 
@@ -202,6 +228,7 @@ function finalizePoints(
     points: finalPoints,
     rule: source.rule,
     details: `${source.details}; raw=${amount}; capped=${finalPoints}; caps=${caps.join(", ")}`,
+    rewardType: "mudra",
   };
 }
 
@@ -275,6 +302,8 @@ export function submitReward(
       reward: rewardCalculation.points,
       rewardRule: rewardCalculation.rule,
       rewardDetails: rewardCalculation.details,
+      rewardType: rewardCalculation.rewardType,
+      giftItems: rewardCalculation.giftItems,
       status: "approved",
       timestamp: new Date().toISOString(),
     },

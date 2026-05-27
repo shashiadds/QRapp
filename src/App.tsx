@@ -417,6 +417,7 @@ function CustomerFlow({
   const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
   const [giftState, setGiftState] = useState<"closed" | "opening" | "opened">("closed");
   const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
+  const [lastTxn, setLastTxn] = useState<Transaction | null>(null);
 
   useEffect(() => {
     if (phase === "reward") {
@@ -508,11 +509,13 @@ function CustomerFlow({
         setPhase("form");
         setMessage(result.reason);
         setReward(null);
+        setLastTxn(null);
         return;
       }
 
       setTransactions([result.transaction, ...transactions]);
       setReward(result.transaction.reward);
+      setLastTxn(result.transaction);
       setPhase("reward");
     }, 850);
   };
@@ -624,7 +627,13 @@ function CustomerFlow({
                   <Trophy size={48} color="#facc15" />
                 </div>
                 <span className="reward-label">You won</span>
-                <strong className="reward-amount">{formatPoints(reward ?? 0)}</strong>
+                {lastTxn?.rewardType === "gift" ? (
+                  <strong className="reward-amount" style={{ fontSize: "1.4rem", lineHeight: "1.3", margin: "0.5rem 0", display: "block" }}>
+                    {lastTxn.giftItems || "No gift eligible"}
+                  </strong>
+                ) : (
+                  <strong className="reward-amount">{formatPoints(reward ?? 0)}</strong>
+                )}
                 <p className="reward-bill-info">
                   For your purchase of {formatPlainNumber(Number(billAmount))}
                 </p>
@@ -1237,7 +1246,7 @@ function TransactionTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Mudra", "Mudra Rule", "Mudra Details", "Visits", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Mobile", "Name", "Address", "Shop ID", "Purchase Total", "Mudra", "Mudra Rule", "Mudra Details", "Reward Type", "Gift Items", "Visits", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredTransactions.map(tx => [
               formatTransactionDate(tx.timestamp),
               formatTransactionTime(tx.timestamp),
@@ -1249,6 +1258,8 @@ function TransactionTable({
               tx.reward,
               tx.rewardRule || "",
               tx.rewardDetails || "",
+              tx.rewardType || "mudra",
+              tx.giftItems || "",
               visitsByMobile.get(tx.mobile) || 1,
               tx.timestamp,
               tx.ipAddress,
@@ -1353,7 +1364,16 @@ function TransactionTable({
                 {!compact && <td>{transaction.customerName || "Walk-in"}</td>}
                 {!compact && <td>{shopNameById.get(transaction.shopId) || transaction.shopId}</td>}
                 <td>{formatPlainNumber(transaction.billAmount)}</td>
-                <td>{formatPlainNumber(transaction.reward)}</td>
+                <td>
+                  {transaction.rewardType === "gift" ? (
+                    <span title={transaction.giftItems || "Gift"} style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", cursor: "help" }}>
+                      <span>🎁</span>
+                      <span style={{ fontSize: "0.85em", color: "var(--color-primary-light)", fontWeight: "500" }}>Gift</span>
+                    </span>
+                  ) : (
+                    formatPlainNumber(transaction.reward)
+                  )}
+                </td>
                 <td>{visitsByMobile.get(transaction.mobile) || 1}</td>
                 <td>
                   <button

@@ -63,6 +63,10 @@ export default function InvoiceModal({ transaction, shops, onClose }: InvoiceMod
   };
 
   const handleCopyDetails = () => {
+    const isGift = transaction.rewardType === "gift";
+    const rewardLine = isGift
+      ? `Gift Reward Won:   ${transaction.giftItems || "N/A"}`
+      : `Mudra Reward:      +${transaction.reward} mudra`;
     const detailsText = `
 ----------------------------------------
 SMART MUDRA TRANSACTION INVOICE
@@ -76,7 +80,7 @@ Mobile Number:  ${transaction.mobile || "N/A"}
 Address:        ${transaction.address || "N/A"}
 ----------------------------------------
 Total Purchase: ₹${transaction.billAmount.toLocaleString("en-IN")}
-Mudra Reward:   +${transaction.reward} mudra
+${rewardLine}
 ----------------------------------------
 IP Address:     ${transaction.ipAddress || "N/A"}
 Location:       ${transaction.location || "N/A"}
@@ -111,12 +115,13 @@ Verified Digital Receipt.
     maximumFractionDigits: 2,
   }).format(transaction.billAmount);
 
-  const formattedRewardValue = `${transaction.reward} mudra`;
+  const isGift = transaction.rewardType === "gift";
+  const formattedRewardValue = isGift ? "" : `${transaction.reward} mudra`;
   const formattedNetValue = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 2,
-  }).format(transaction.billAmount + transaction.reward);
+  }).format(transaction.billAmount + (isGift ? 0 : transaction.reward));
 
   return (
     <div className="invoice-modal-overlay" onClick={handleOverlayClick}>
@@ -178,13 +183,23 @@ Verified Digital Receipt.
               <span>Total Purchase Amount</span>
               <strong>{formattedBillAmount}</strong>
             </div>
-            <div className="invoice-breakdown-row reward-row">
-              <span>
-                <Sparkles size={14} style={{ marginRight: "4px", display: "inline-block", verticalAlign: "middle" }} />
-                Mudra Cashback Won
-              </span>
-              <strong>+{formattedRewardValue}</strong>
-            </div>
+            {isGift ? (
+              <div className="invoice-breakdown-row reward-row">
+                <span>
+                  <Sparkles size={14} style={{ marginRight: "4px", display: "inline-block", verticalAlign: "middle" }} />
+                  Gift Reward Won
+                </span>
+                <strong>{transaction.giftItems || "No gift eligible"}</strong>
+              </div>
+            ) : (
+              <div className="invoice-breakdown-row reward-row">
+                <span>
+                  <Sparkles size={14} style={{ marginRight: "4px", display: "inline-block", verticalAlign: "middle" }} />
+                  Mudra Cashback Won
+                </span>
+                <strong>+{formattedRewardValue}</strong>
+              </div>
+            )}
             <div className="invoice-breakdown-row total-row">
               <span>Net Value Recognized</span>
               <strong>{formattedNetValue}</strong>
