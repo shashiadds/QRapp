@@ -567,13 +567,31 @@ function CustomerFlow({
 
   const matchedGift = useMemo(() => {
     if (lastTxn?.rewardType !== "gift" || !lastTxn?.giftItems) return null;
-    const searchName = lastTxn.giftItems.toLowerCase().trim();
-    const found = gifts.find((g) => g.name.toLowerCase().trim() === searchName);
+    const searchOriginal = lastTxn.giftItems.trim();
+    const searchLower = searchOriginal.toLowerCase();
+    const searchNormalized = searchLower.replace(/[^a-z0-9]/g, "");
+
+    // 1. Try exact match on original/trimmed/lowercase
+    let found = gifts.find((g) => g.name.toLowerCase().trim() === searchLower);
     if (found) return found;
-    return gifts.find((g) => {
+
+    // 2. Try matching after stripping all non-alphanumeric characters (e.g. "power bank" matches "powerbank")
+    found = gifts.find((g) => g.name.toLowerCase().replace(/[^a-z0-9]/g, "") === searchNormalized);
+    if (found) return found;
+
+    // 3. Try substring/includes matching on lowercase
+    found = gifts.find((g) => {
       const gName = g.name.toLowerCase().trim();
-      return gName.includes(searchName) || searchName.includes(gName);
-    }) || null;
+      return gName.includes(searchLower) || searchLower.includes(gName);
+    });
+    if (found) return found;
+
+    // 4. Try substring/includes matching on normalized
+    found = gifts.find((g) => {
+      const gNameNorm = g.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+      return gNameNorm.includes(searchNormalized) || searchNormalized.includes(gNameNorm);
+    });
+    return found || null;
   }, [lastTxn, gifts]);
 
   useEffect(() => {
