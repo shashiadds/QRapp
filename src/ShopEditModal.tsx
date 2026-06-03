@@ -69,12 +69,17 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
   };
 
   const handleAddBand = () => {
-    if (rewardType === "gift") {
-      setBands([...bands, { minBill: 0, maxBill: undefined, giftItems: "" }]);
-    } else if (mudraMode === "fixed") {
-      setBands([...bands, { reward: 10, probability: 10, minBill: 0 }]);
-    } else {
-      setBands([...bands, { minBill: 0, maxBill: undefined, minPercent: 1, maxPercent: 5, probability: 100 }]);
+    try {
+      if (rewardType === "gift") {
+        setBands([...bands, { minBill: 0, maxBill: undefined, giftItems: "" }]);
+      } else if (mudraMode === "fixed") {
+        setBands([...bands, { reward: 10, probability: 10, minBill: 0 }]);
+      } else {
+        setBands([...bands, { minBill: 0, maxBill: undefined, minPercent: 1, maxPercent: 5, probability: 100 }]);
+      }
+      alert("Slab range added to state! Row count: " + (bands.length + 1));
+    } catch (err) {
+      alert("Error adding band: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -258,7 +263,9 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
           <div className="bands-section-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {rewardType === "mudra" ? <Coins size={18} color="#facc15" /> : <Gift size={18} color="#a78bfa" />}
-              <h4>Reward Slabs & Ranges</h4>
+              <h4 onClick={() => alert(`bands state: ${JSON.stringify(bands)}\nrewardType: ${rewardType}\nmudraMode: ${mudraMode}\ntypeof bands: ${typeof bands}\nisArray: ${Array.isArray(bands)}`)} style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                Reward Slabs & Ranges (Click to debug)
+              </h4>
             </div>
 
             {rewardType === "mudra" && (
