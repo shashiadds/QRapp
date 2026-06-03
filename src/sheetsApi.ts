@@ -1,4 +1,4 @@
-import type { AppData, PublicAppData, RewardResult, Shop, Session, VisitorContext } from "./types";
+import type { AppData, PublicAppData, RewardResult, Shop, Session, VisitorContext, GiftItem } from "./types";
 
 const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -104,6 +104,36 @@ export function updateSheetsShop(shopId: string, shop: Partial<Shop>, session: S
   return request<{ ok: boolean; shop: Shop }>("updateShop", {
     shopId,
     shop,
+    token: session?.token,
+  });
+}
+
+export function addSheetsGift(gift: Partial<GiftItem>, session: Session | null) {
+  return request<{ ok: boolean; gift: GiftItem }>("addGift", {
+    gift,
+    token: session?.token,
+  });
+}
+
+export function deleteSheetsGift(giftId: string, session: Session | null) {
+  return request<{ ok: boolean; id: string }>("deleteGift", {
+    giftId,
+    token: session?.token,
+  });
+}
+
+export function updateSheetsGift(giftId: string, gift: Partial<GiftItem>, session: Session | null) {
+  return request<{ ok: boolean; gift: GiftItem }>("updateGift", {
+    giftId,
+    gift,
+    token: session?.token,
+  });
+}
+
+export function uploadSheetsGiftImage(fileName: string, base64Data: string, session: Session | null) {
+  return request<{ ok: boolean; imageUrl: string }>("uploadGiftImage", {
+    fileName,
+    base64Data,
     token: session?.token,
   });
 }

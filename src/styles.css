@@ -1814,3 +1814,25 @@ th {
   display: block;
 }
 
+/* Gift reveal image styling */
+.gift-reveal-image {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 8px;
+  filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5));
+  animation: giftIconFloat 3s ease-in-out infinite;
+}
+
+/* Custom form fields alignment inside Gift Inventory */
+.admin-gift-thumb-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.admin-gift-thumb-container:hover img {
+  transform: scale(1.15);
+}
+

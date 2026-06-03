@@ -48,8 +48,12 @@ import {
   deleteSheetsShop,
   updateSheetsShop,
   lookupSheetsCustomer,
+  addSheetsGift,
+  deleteSheetsGift,
+  updateSheetsGift,
+  uploadSheetsGiftImage,
 } from "./sheetsApi";
-import type { FraudSignal, Session, Shop, Transaction, VisitorContext } from "./types";
+import type { FraudSignal, Session, Shop, Transaction, VisitorContext, GiftItem } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 import InvoiceModal from "./InvoiceModal";
 import ShopEditModal from "./ShopEditModal";
@@ -204,6 +208,13 @@ function App() {
     return saved ? JSON.parse(saved) : seedShops;
   });
   const [fraudSignals, setFraudSignals] = useState<FraudSignal[]>(seedFraudSignals);
+  const [gifts, setGifts] = useState<GiftItem[]>(() => {
+    if (isSheetsConfigured) {
+      return [];
+    }
+    const saved = localStorage.getItem("smart-mudra-gifts");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     if (isSheetsConfigured) {
       return seedTransactions;
@@ -246,6 +257,13 @@ function App() {
   }, [shops]);
 
   useEffect(() => {
+    if (isSheetsConfigured) {
+      return;
+    }
+    localStorage.setItem("smart-mudra-gifts", JSON.stringify(gifts));
+  }, [gifts]);
+
+  useEffect(() => {
     if (session) {
       localStorage.setItem("smart-mudra-session", JSON.stringify(session));
       return;
@@ -262,6 +280,7 @@ function App() {
     loadPublicData()
       .then((data) => {
         setShops(data.shops.length ? data.shops : seedShops);
+        setGifts(data.gifts || []);
         setDataStatus("Google Sheets connected");
       })
       .catch((error) => {
@@ -280,6 +299,7 @@ function App() {
         setTransactions(data.transactions);
         setFraudSignals(data.fraudSignals);
         setShopPasswords(data.shopPasswords || {});
+        setGifts(data.gifts || []);
         setDataStatus("Google Sheets connected");
         setHasLoadedArchive(true);
       })
@@ -321,6 +341,7 @@ function App() {
             transactions={transactions}
             setTransactions={setTransactions}
             setSelectedShopId={setSelectedShopId}
+            gifts={gifts}
           />
         ) : (
           <section className="customer-shell">
@@ -407,6 +428,8 @@ function App() {
               shopPasswords={shopPasswords}
               session={session}
               onViewInvoice={setInvoiceTxn}
+              gifts={gifts}
+              setGifts={setGifts}
             />
           </div>
         )
@@ -469,12 +492,14 @@ function CustomerFlow({
   transactions,
   setTransactions,
   setSelectedShopId,
+  gifts,
 }: {
   shop: Shop;
   shops: Shop[];
   transactions: Transaction[];
   setTransactions: (transactions: Transaction[]) => void;
   setSelectedShopId: (shopId: string) => void;
+  gifts: GiftItem[];
 }) {
   const isGiftShop = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
   const [customerName, setCustomerName] = useState("");
@@ -488,6 +513,12 @@ function CustomerFlow({
   const [giftState, setGiftState] = useState<"closed" | "opening" | "opened">("closed");
   const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
   const [lastTxn, setLastTxn] = useState<Transaction | null>(null);
+
+  const matchedGift = useMemo(() => {
+    if (lastTxn?.rewardType !== "gift" || !lastTxn?.giftItems) return null;
+    const searchName = lastTxn.giftItems.toLowerCase().trim();
+    return gifts.find((g) => g.name.toLowerCase().trim() === searchName) || null;
+  }, [lastTxn, gifts]);
 
   useEffect(() => {
     if (phase === "reward") {
@@ -700,7 +731,11 @@ function CustomerFlow({
                 {lastTxn?.rewardType === "gift" ? (
                   <>
                     <div className="success-icon-wrap bounce gift-icon-wrap">
-                      {getGiftIcon(lastTxn.giftItems || "")}
+                      {matchedGift && matchedGift.imageUrl ? (
+                        <img src={matchedGift.imageUrl} alt={matchedGift.name} className="gift-reveal-image" />
+                      ) : (
+                        getGiftIcon(lastTxn.giftItems || "")
+                      )}
                     </div>
                     <span className="reward-label">You won a gift!</span>
                     <strong className="reward-amount gift-title-amount">
@@ -839,6 +874,8 @@ function AdminDashboard({
   shopPasswords,
   session,
   onViewInvoice,
+  gifts,
+  setGifts,
 }: {
   shops: Shop[];
   setShops: (shops: Shop[]) => void;
@@ -847,6 +884,8 @@ function AdminDashboard({
   shopPasswords: Record<string, string>;
   session: ActiveSession;
   onViewInvoice?: (transaction: Transaction) => void;
+  gifts: GiftItem[];
+  setGifts: (gifts: GiftItem[]) => void;
 }) {
   const [isAddingShop, setIsAddingShop] = useState(false);
   const [newShopName, setNewShopName] = useState("");
@@ -859,6 +898,148 @@ function AdminDashboard({
   const [deletingShopId, setDeletingShopId] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
   const [editingShop, setEditingShop] = useState<Shop | null>(null);
+
+  // Gift inventory states
+  const [isAddingGift, setIsAddingGift] = useState(false);
+  const [newGiftName, setNewGiftName] = useState("");
+  const [newGiftImageUrl, setNewGiftImageUrl] = useState("");
+  const [newGiftFile, setNewGiftFile] = useState<File | null>(null);
+  const [editingGift, setEditingGift] = useState<GiftItem | null>(null);
+  const [isSubmittingGift, setIsSubmittingGift] = useState(false);
+  
+  // Fields for editing inline
+  const [editGiftName, setEditGiftName] = useState("");
+  const [editGiftImageUrl, setEditGiftImageUrl] = useState("");
+  const [editGiftFile, setEditGiftFile] = useState<File | null>(null);
+
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleAddGift = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGiftName.trim() || isSubmittingGift) return;
+
+    setIsSubmittingGift(true);
+    try {
+      let finalImageUrl = newGiftImageUrl.trim();
+
+      if (newGiftFile) {
+        const base64Data = await readFileAsBase64(newGiftFile);
+        if (isSheetsConfigured) {
+          const uploadResult = await uploadSheetsGiftImage(newGiftFile.name, base64Data, session);
+          if (uploadResult.ok) {
+            finalImageUrl = uploadResult.imageUrl;
+          } else {
+            throw new Error("Failed to upload image to Google Drive.");
+          }
+        } else {
+          finalImageUrl = base64Data;
+        }
+      }
+
+      if (isSheetsConfigured) {
+        const result = await addSheetsGift(
+          {
+            name: newGiftName.trim(),
+            imageUrl: finalImageUrl,
+          },
+          session
+        );
+        if (result.ok) {
+          setGifts([...gifts, result.gift]);
+          setNewGiftName("");
+          setNewGiftImageUrl("");
+          setNewGiftFile(null);
+          setIsAddingGift(false);
+        } else {
+          alert("Failed to create gift.");
+        }
+      } else {
+        const newGift: GiftItem = {
+          id: "GIFT-" + Math.floor(100000 + Math.random() * 900000),
+          name: newGiftName.trim(),
+          imageUrl: finalImageUrl,
+        };
+        setGifts([...gifts, newGift]);
+        setNewGiftName("");
+        setNewGiftImageUrl("");
+        setNewGiftFile(null);
+        setIsAddingGift(false);
+      }
+    } catch (err) {
+      alert(`Error adding gift: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsSubmittingGift(false);
+    }
+  };
+
+  const handleUpdateGift = async (giftId: string) => {
+    if (!editGiftName.trim()) return;
+    setIsSubmittingGift(true);
+    try {
+      let finalImageUrl = editGiftImageUrl.trim();
+
+      if (editGiftFile) {
+        const base64Data = await readFileAsBase64(editGiftFile);
+        if (isSheetsConfigured) {
+          const uploadResult = await uploadSheetsGiftImage(editGiftFile.name, base64Data, session);
+          if (uploadResult.ok) {
+            finalImageUrl = uploadResult.imageUrl;
+          } else {
+            throw new Error("Failed to upload image to Google Drive.");
+          }
+        } else {
+          finalImageUrl = base64Data;
+        }
+      }
+
+      const fields = { name: editGiftName.trim(), imageUrl: finalImageUrl };
+      if (isSheetsConfigured) {
+        const result = await updateSheetsGift(giftId, fields, session);
+        if (result.ok) {
+          setGifts(gifts.map((g) => (g.id === giftId ? result.gift : g)));
+        } else {
+          throw new Error("Failed to update gift configuration.");
+        }
+      } else {
+        setGifts(
+          gifts.map((g) => (g.id === giftId ? { ...g, ...fields } : g))
+        );
+      }
+      setEditingGift(null);
+      setEditGiftFile(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error updating gift.");
+    } finally {
+      setIsSubmittingGift(false);
+    }
+  };
+
+  const handleDeleteGift = async (giftId: string, giftName: string) => {
+    const shouldDelete = window.confirm(`Delete gift item "${giftName}"? This will not affect old transactions but it won't render its image in new wins.`);
+    if (!shouldDelete) return;
+
+    try {
+      if (isSheetsConfigured) {
+        const result = await deleteSheetsGift(giftId, session);
+        if (result.ok) {
+          setGifts(gifts.filter((g) => g.id !== giftId));
+        } else {
+          alert("Failed to delete gift.");
+        }
+      } else {
+        setGifts(gifts.filter((g) => g.id !== giftId));
+      }
+    } catch (err) {
+      alert(`Error deleting gift: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   const approved = transactions.filter((transaction) => transaction.status === "approved");
   const payout = approved.reduce((sum, item) => sum + item.reward, 0);
@@ -1126,6 +1307,151 @@ function AdminDashboard({
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="surface" style={{ marginBottom: "18px" }}>
+        <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Gift size={20} />
+            <h2>Gift inventory management</h2>
+          </div>
+          <button 
+            className="secondary-action" 
+            style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+            onClick={() => setIsAddingGift(!isAddingGift)}
+          >
+            {isAddingGift ? "Cancel" : "Add Gift Item"}
+          </button>
+        </div>
+
+        {isAddingGift && (
+          <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
+            <form onSubmit={handleAddGift}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <label>
+                  Gift Item Name
+                  <input 
+                    placeholder="e.g. Mobile Phone, Water Bottle"
+                    value={newGiftName} 
+                    onChange={(e) => setNewGiftName(e.target.value)} 
+                    required 
+                  />
+                </label>
+                <label>
+                  Upload Image File
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setNewGiftFile(e.target.files?.[0] || null)}
+                    style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-main)', padding: '6px' }}
+                  />
+                </label>
+                <label>
+                  Or Image URL (Fallback)
+                  <input 
+                    placeholder="e.g. https://example.com/mobile.png"
+                    value={newGiftImageUrl} 
+                    onChange={(e) => setNewGiftImageUrl(e.target.value)} 
+                  />
+                </label>
+              </div>
+              <button type="submit" disabled={isSubmittingGift} className="primary-action" style={{ marginTop: "0.5rem" }}>
+                {isSubmittingGift ? "Saving..." : "Add Gift"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        <div className="shop-list">
+          {gifts.length === 0 ? (
+            <p className="muted-note" style={{ padding: "1rem 0", textAlign: "center" }}>No gift items configured yet. Add gifts to upload custom images.</p>
+          ) : (
+            gifts.map((gift) => (
+              <div className="shop-row" key={gift.id} style={{ alignItems: "center" }}>
+                {editingGift?.id === gift.id ? (
+                  <div style={{ display: "flex", flex: 1, gap: "1rem", alignItems: "flex-end" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", flex: 1 }}>
+                      <label style={{ margin: 0 }}>
+                        Name
+                        <input value={editGiftName} onChange={(e) => setEditGiftName(e.target.value)} required />
+                      </label>
+                      <label style={{ margin: 0 }}>
+                        Replace Image File
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => setEditGiftFile(e.target.files?.[0] || null)}
+                          style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-main)', padding: '6px' }}
+                        />
+                      </label>
+                      <label style={{ margin: 0 }}>
+                        Or Image URL
+                        <input value={editGiftImageUrl} onChange={(e) => setEditGiftImageUrl(e.target.value)} />
+                      </label>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button 
+                        className="primary-action" 
+                        style={{ width: "auto", minHeight: "36px", padding: "0 12px" }}
+                        onClick={() => handleUpdateGift(gift.id)}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        className="secondary-action" 
+                        style={{ width: "auto", minHeight: "36px", padding: "0 12px" }}
+                        onClick={() => setEditingGift(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div className="admin-gift-thumb-container" style={{ width: "42px", height: "42px", background: "rgba(255,255,255,0.05)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
+                        {gift.imageUrl ? (
+                          <img src={gift.imageUrl} alt={gift.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        ) : (
+                          <Gift size={20} style={{ color: "#94a3b8" }} />
+                        )}
+                      </div>
+                      <div>
+                        <strong>{gift.name}</strong>
+                        <div style={{ fontSize: "11px", color: "#64748b", wordBreak: "break-all", marginTop: "2px" }}>
+                          {gift.imageUrl || "No image URL configured"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shop-row-actions">
+                      <button
+                        className="icon-button"
+                        type="button"
+                        title={`Edit ${gift.name}`}
+                        onClick={() => {
+                          setEditingGift(gift);
+                          setEditGiftName(gift.name);
+                          setEditGiftImageUrl(gift.imageUrl);
+                        }}
+                        style={{ marginRight: '4px' }}
+                      >
+                        <Pencil size={17} />
+                      </button>
+                      <button
+                        className="icon-button danger-button"
+                        type="button"
+                        title={`Delete ${gift.name}`}
+                        onClick={() => handleDeleteGift(gift.id, gift.name)}
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </section>
 

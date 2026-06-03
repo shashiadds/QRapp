@@ -5,6 +5,7 @@ const SHEETS = {
   fraud: "fraud",
   admins: "admins",
   sessions: "sessions",
+  gifts: "gifts",
 };
 
 const TRANSACTION_HISTORY_SHEETS = [
@@ -71,6 +72,7 @@ const HEADERS = {
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
   admins: ["username", "password", "passwordSalt", "passwordHash", "role", "shopId"],
   sessions: ["token", "username", "role", "shopId", "expiresAt", "createdAt"],
+  gifts: ["id", "name", "imageUrl"],
 };
 
 const SEED_SHOPS = [
@@ -148,6 +150,7 @@ function doGet(event) {
   if (action === "publicBootstrap") {
     return jsonResponse({
       shops: readPublicShops(),
+      gifts: readGifts(),
     });
   }
 
@@ -164,6 +167,7 @@ function doGet(event) {
       transactions: transactions,
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
       shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
+      gifts: readGifts(),
     });
   }
 
@@ -186,6 +190,7 @@ function doPost(event) {
       transactions: transactions,
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
       shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
+      gifts: readGifts(),
     });
   }
 
@@ -235,6 +240,38 @@ function doPost(event) {
       return jsonResponse(session);
     }
     return jsonResponse(updateShop(body.shopId, body.shop));
+  }
+
+  if (body.action === "addGift") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+    return jsonResponse(addGift(body.gift));
+  }
+
+  if (body.action === "updateGift") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+    return jsonResponse(updateGift(body.giftId, body.gift));
+  }
+
+  if (body.action === "deleteGift") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+    return jsonResponse(deleteGift(body.giftId));
+  }
+
+  if (body.action === "uploadGiftImage") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+    return jsonResponse(uploadGiftImage(body.fileName, body.base64Data));
   }
 
   if (body.action === "archiveOldTransactions") {
@@ -597,6 +634,104 @@ function updateShop(shopId, shopData) {
   }
 
   return { ok: false, reason: "Shop not found." };
+}
+
+function readGifts() {
+  ensureHeaders(SHEETS.gifts, HEADERS.gifts);
+  return readObjects(SHEETS.gifts).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    imageUrl: String(row.imageUrl || ""),
+  }));
+}
+
+function addGift(giftData) {
+  ensureHeaders(SHEETS.gifts, HEADERS.gifts);
+  const giftId = "GIFT-" + Math.floor(100000 + Math.random() * 900000);
+  const newGift = {
+    id: giftId,
+    name: String(giftData.name || "").trim(),
+    imageUrl: String(giftData.imageUrl || "").trim(),
+  };
+  appendObject(SHEETS.gifts, HEADERS.gifts, newGift);
+  return { ok: true, gift: newGift };
+}
+
+function updateGift(giftId, giftData) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.gifts);
+  ensureHeaders(SHEETS.gifts, HEADERS.gifts);
+
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idIndex = headers.indexOf("id");
+  const targetGiftId = String(giftId);
+
+  for (let index = 1; index < values.length; index += 1) {
+    if (String(values[index][idIndex]) === targetGiftId) {
+      headers.forEach((header, colIndex) => {
+        if (header === "id") return; // ID is immutable
+        if (giftData[header] !== undefined) {
+          sheet.getRange(index + 1, colIndex + 1).setValue(String(giftData[header]).trim());
+        }
+      });
+      const gift = readGifts().find((item) => item.id === targetGiftId);
+      return { ok: true, gift: gift };
+    }
+  }
+
+  return { ok: false, reason: "Gift not found." };
+}
+
+function deleteGift(giftId) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.gifts);
+  ensureHeaders(SHEETS.gifts, HEADERS.gifts);
+
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idIndex = headers.indexOf("id");
+  const targetGiftId = String(giftId);
+
+  for (let index = 1; index < values.length; index += 1) {
+    if (String(values[index][idIndex]) === targetGiftId) {
+      sheet.deleteRow(index + 1);
+      return { ok: true, id: targetGiftId };
+    }
+  }
+
+  return { ok: false, reason: "Gift not found." };
+}
+
+function uploadGiftImage(fileName, base64Data) {
+  try {
+    const folderName = "SmartMudraGifts";
+    let folder;
+    const folders = DriveApp.getFoldersByName(folderName);
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+
+    const matches = String(base64Data).match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+    if (!matches) {
+      return { ok: false, reason: "Invalid base64 image data format." };
+    }
+    const contentType = matches[1];
+    const base64Body = matches[2];
+    const bytes = Utilities.base64Decode(base64Body);
+    const blob = Utilities.newBlob(bytes, contentType, fileName);
+    const file = folder.createFile(blob);
+    
+    // Set view sharing permission to anyone with link
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
+    const fileId = file.getId();
+    const imageUrl = "https://docs.google.com/uc?export=view&id=" + fileId;
+    
+    return { ok: true, imageUrl: imageUrl };
+  } catch (e) {
+    return { ok: false, reason: "Drive Upload Error: " + e.toString() };
+  }
 }
 
 function submitReward(

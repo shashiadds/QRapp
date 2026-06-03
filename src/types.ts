@@ -53,15 +53,23 @@ export type RewardResult =
   | { ok: true; transaction: Transaction }
   | { ok: false; reason: string };
 
+export type GiftItem = {
+  id: string;
+  name: string;
+  imageUrl: string;
+};
+
 export type AppData = {
   shops: Shop[];
   transactions: Transaction[];
   fraudSignals: FraudSignal[];
   shopPasswords?: Record<string, string>;
+  gifts: GiftItem[];
 };
 
 export type PublicAppData = {
   shops: Shop[];
+  gifts: GiftItem[];
 };
 
 export type Session = {
