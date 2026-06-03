@@ -921,6 +921,39 @@ function AdminDashboard({
     });
   };
 
+  const distinctShopGifts = useMemo(() => {
+    const giftNames = new Set<string>();
+    
+    shops
+      .filter((shop) => shop.status !== "deleted")
+      .forEach((shop) => {
+        const isGift = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
+        if (isGift && shop.rewardBands) {
+          shop.rewardBands.forEach((band) => {
+            if (band.giftItems) {
+              band.giftItems
+                .split(",")
+                .map((name) => name.trim())
+                .filter(Boolean)
+                .forEach((name) => {
+                  giftNames.add(name);
+                });
+            }
+          });
+        }
+      });
+      
+    const existingGiftNames = new Set(gifts.map((g) => g.name.toLowerCase().trim()));
+    return Array.from(giftNames).filter(
+      (name) => !existingGiftNames.has(name.toLowerCase().trim())
+    );
+  }, [shops, gifts]);
+
+  const handleQuickAddGift = (giftName: string) => {
+    setNewGiftName(giftName);
+    setIsAddingGift(true);
+  };
+
   const handleAddGift = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGiftName.trim() || isSubmittingGift) return;
@@ -1324,6 +1357,27 @@ function AdminDashboard({
             {isAddingGift ? "Cancel" : "Add Gift Item"}
           </button>
         </div>
+
+        {distinctShopGifts.length > 0 && (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "0.85rem 1rem", borderRadius: "8px", marginBottom: "1rem" }}>
+            <span style={{ fontSize: "12px", color: "#94a3b8", display: "block", marginBottom: "8px", fontWeight: 600 }}>
+              🎁 Gift items used by shops but missing from inventory (Click to add & upload image):
+            </span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {distinctShopGifts.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className="secondary-action"
+                  style={{ width: "auto", minHeight: "28px", padding: "0 10px", fontSize: "11px", borderRadius: "14px", background: "rgba(139, 92, 246, 0.1)", border: "1px solid rgba(139, 92, 246, 0.2)", color: "#c084fc", cursor: "pointer" }}
+                  onClick={() => handleQuickAddGift(name)}
+                >
+                  + {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {isAddingGift && (
           <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
