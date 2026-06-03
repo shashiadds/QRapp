@@ -19,6 +19,18 @@ import {
   Users,
   Pencil,
   Plus,
+  GlassWater,
+  Coffee,
+  Shirt,
+  Umbrella,
+  Watch,
+  BookOpen,
+  ShoppingBag,
+  Sparkles,
+  PenTool,
+  Headphones,
+  Gamepad2,
+  Tv,
 } from "lucide-react";
 import {
   fraudSignals as seedFraudSignals,
@@ -43,6 +55,47 @@ import ShopEditModal from "./ShopEditModal";
 
 type View = "customer" | "shop" | "admin";
 type ActiveSession = Session | null;
+
+function getGiftIcon(giftItemName: string) {
+  const name = giftItemName.toLowerCase().trim();
+  if (name.includes("pen") || name.includes("pencil") || name.includes("stationery")) {
+    return <PenTool size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("bottle") || name.includes("flask") || name.includes("thermos") || name.includes("water") || name.includes("glass")) {
+    return <GlassWater size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("mug") || name.includes("cup") || name.includes("coffee") || name.includes("tea")) {
+    return <Coffee size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("keyring") || name.includes("keychain") || name.includes("key")) {
+    return <Key size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("shirt") || name.includes("tshirt") || name.includes("clothes") || name.includes("t-shirt") || name.includes("cap") || name.includes("hat")) {
+    return <Shirt size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("umbrella")) {
+    return <Umbrella size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("watch") || name.includes("clock") || name.includes("smartwatch")) {
+    return <Watch size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("book") || name.includes("diary") || name.includes("notebook") || name.includes("journal")) {
+    return <BookOpen size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("bag") || name.includes("backpack") || name.includes("pouch")) {
+    return <ShoppingBag size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("headphone") || name.includes("earphone") || name.includes("buds") || name.includes("audio")) {
+    return <Headphones size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("game") || name.includes("toy") || name.includes("play")) {
+    return <Gamepad2 size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("tv") || name.includes("speaker") || name.includes("device")) {
+    return <Tv size={56} className="gift-item-icon" />;
+  }
+  return <Sparkles size={56} className="gift-item-icon" />;
+}
 
 const pointNumber = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
@@ -640,16 +693,24 @@ function CustomerFlow({
               </div>
 
               <div className="reward-content-pop">
-                <div className="success-icon-wrap bounce">
-                  <Trophy size={48} color="#facc15" />
-                </div>
-                <span className="reward-label">You won</span>
                 {lastTxn?.rewardType === "gift" ? (
-                  <strong className="reward-amount" style={{ fontSize: "1.4rem", lineHeight: "1.3", margin: "0.5rem 0", display: "block" }}>
-                    {lastTxn.giftItems || "No gift eligible"}
-                  </strong>
+                  <>
+                    <div className="success-icon-wrap bounce gift-icon-wrap">
+                      {getGiftIcon(lastTxn.giftItems || "")}
+                    </div>
+                    <span className="reward-label">You won a gift!</span>
+                    <strong className="reward-amount gift-title-amount">
+                      {lastTxn.giftItems || "No gift eligible"}
+                    </strong>
+                  </>
                 ) : (
-                  <strong className="reward-amount">{formatPoints(reward ?? 0)}</strong>
+                  <>
+                    <div className="success-icon-wrap bounce">
+                      <Trophy size={48} color="#facc15" />
+                    </div>
+                    <span className="reward-label">You won</span>
+                    <strong className="reward-amount">{formatPoints(reward ?? 0)}</strong>
+                  </>
                 )}
                 <p className="reward-bill-info">
                   For your purchase of {formatPlainNumber(Number(billAmount))}

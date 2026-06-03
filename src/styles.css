@@ -1784,3 +1784,33 @@ th {
   padding: 0 20px;
 }
 
+/* Dynamic Gift Icon Styling */
+.gift-icon-wrap {
+  background: rgba(139, 92, 246, 0.18) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.3) !important;
+  padding: 1.8rem !important;
+}
+
+.gift-item-icon {
+  color: #a78bfa;
+  filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.6));
+  animation: giftIconFloat 3s ease-in-out infinite;
+}
+
+@keyframes giftIconFloat {
+  0% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-8px) scale(1.05); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+.gift-title-amount {
+  color: #a78bfa !important;
+  font-size: 32px !important;
+  line-height: 1.2 !important;
+  font-weight: 800;
+  text-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+  margin: 0.75rem 0;
+  display: block;
+}
+
