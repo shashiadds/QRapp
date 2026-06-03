@@ -846,7 +846,7 @@ function AdminDashboard({
         alert("Adding shops is only supported when connected to Google Sheets.");
       }
     } catch (err) {
-      alert("Error adding shop.");
+      alert(`Error adding shop: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -898,7 +898,7 @@ function AdminDashboard({
         setShops(shops.map((item) => (item.id === shop.id ? { ...item, status: "deleted" } : item)));
       }
     } catch (err) {
-      alert("Error deleting shop.");
+      alert(`Error deleting shop: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setDeletingShopId(null);
     }
@@ -996,6 +996,9 @@ function AdminDashboard({
               <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
                 {isSubmitting ? "Creating..." : "Create Shop"}
               </button>
+              <p className="muted-note" style={{ fontSize: '12px', marginTop: '0.75rem', textAlign: 'left', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                ℹ️ Once created, click the <strong>Pencil (Edit)</strong> icon next to the shop in the list below to configure its reward bands, bill ranges, and list of gift items.
+              </p>
             </form>
             {createdCredentials && (
               <div style={{ marginTop: "1rem", padding: "1rem", background: "#e6ffe6", border: "1px solid #00cc00", borderRadius: "8px", color: "#006600" }}>
