@@ -105,6 +105,55 @@ function getGiftIcon(giftItemName: string) {
   return <Sparkles size={56} className="gift-item-icon" />;
 }
 
+function normalizeDriveUrl(url: string): string {
+  if (!url) return "";
+  // Check for docs.google.com/uc?id=... or export=view&id=...
+  const ucMatch = url.match(/docs\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)/);
+  if (ucMatch && ucMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${ucMatch[1]}`;
+  }
+  // Check for drive.google.com/open?id=...
+  const openMatch = url.match(/drive\.google\.com\/open\?.*id=([a-zA-Z0-9_-]+)/);
+  if (openMatch && openMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${openMatch[1]}`;
+  }
+  // Check for drive.google.com/file/d/...
+  const fileDMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileDMatch && fileDMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${fileDMatch[1]}`;
+  }
+  return url;
+}
+
+function GiftImageWithFallback({ 
+  src, 
+  alt, 
+  className, 
+  fallbackElement 
+}: { 
+  src?: string; 
+  alt?: string; 
+  className?: string; 
+  fallbackElement: React.ReactNode 
+}) {
+  const [error, setError] = useState(false);
+  const normalizedSrc = src ? normalizeDriveUrl(src) : "";
+
+  if (normalizedSrc && !error) {
+    return (
+      <img 
+        src={normalizedSrc} 
+        alt={alt} 
+        className={className} 
+        onError={() => setError(true)} 
+        style={{ width: "100%", height: "100%", objectFit: "contain" }} 
+      />
+    );
+  }
+
+  return <>{fallbackElement}</>;
+}
+
 const pointNumber = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
@@ -731,11 +780,12 @@ function CustomerFlow({
                 {lastTxn?.rewardType === "gift" ? (
                   <>
                     <div className="success-icon-wrap bounce gift-icon-wrap">
-                      {matchedGift && matchedGift.imageUrl ? (
-                        <img src={matchedGift.imageUrl} alt={matchedGift.name} className="gift-reveal-image" />
-                      ) : (
-                        getGiftIcon(lastTxn.giftItems || "")
-                      )}
+                      <GiftImageWithFallback 
+                        src={matchedGift?.imageUrl} 
+                        alt={lastTxn.giftItems} 
+                        className="gift-reveal-image"
+                        fallbackElement={getGiftIcon(lastTxn.giftItems || "")}
+                      />
                     </div>
                     <span className="reward-label">You won a gift!</span>
                     <strong className="reward-amount gift-title-amount">
@@ -1465,11 +1515,11 @@ function AdminDashboard({
                   <>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <div className="admin-gift-thumb-container" style={{ width: "42px", height: "42px", background: "rgba(255,255,255,0.05)", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
-                        {gift.imageUrl ? (
-                          <img src={gift.imageUrl} alt={gift.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                        ) : (
-                          <Gift size={20} style={{ color: "#94a3b8" }} />
-                        )}
+                        <GiftImageWithFallback 
+                          src={gift.imageUrl} 
+                          alt={gift.name} 
+                          fallbackElement={<Gift size={20} style={{ color: "#94a3b8" }} />}
+                        />
                       </div>
                       <div>
                         <strong>{gift.name}</strong>

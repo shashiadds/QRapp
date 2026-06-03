@@ -726,7 +726,7 @@ function uploadGiftImage(fileName, base64Data) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     
     const fileId = file.getId();
-    const imageUrl = "https://docs.google.com/uc?export=view&id=" + fileId;
+    const imageUrl = "https://lh3.googleusercontent.com/d/" + fileId;
     
     return { ok: true, imageUrl: imageUrl };
   } catch (e) {
