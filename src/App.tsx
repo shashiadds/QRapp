@@ -31,6 +31,7 @@ import {
   Headphones,
   Gamepad2,
   Tv,
+  Smartphone,
 } from "lucide-react";
 import {
   fraudSignals as seedFraudSignals,
@@ -93,6 +94,9 @@ function getGiftIcon(giftItemName: string) {
   }
   if (name.includes("tv") || name.includes("speaker") || name.includes("device")) {
     return <Tv size={56} className="gift-item-icon" />;
+  }
+  if (name.includes("mobile") || name.includes("phone") || name.includes("smartphone") || name.includes("iphone")) {
+    return <Smartphone size={56} className="gift-item-icon" />;
   }
   return <Sparkles size={56} className="gift-item-icon" />;
 }
