@@ -407,6 +407,7 @@ function CustomerFlow({
   setTransactions: (transactions: Transaction[]) => void;
   setSelectedShopId: (shopId: string) => void;
 }) {
+  const isGiftShop = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
@@ -543,7 +544,11 @@ function CustomerFlow({
             <div className="headline">
               <Gift size={34} />
               <h2>Try your luck</h2>
-              <p>Enter today&apos;s bill details to reveal instant mudra.</p>
+              <p>
+                {isGiftShop
+                  ? "Enter today's bill details to reveal your gift."
+                  : "Enter today's bill details to reveal instant mudra."}
+              </p>
             </div>
             <label>
               Mobile number

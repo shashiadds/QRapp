@@ -634,7 +634,9 @@ function calculateReward(shop, billAmount) {
 }
 
 function calculateRewardDetails(shop, billAmount) {
-  if (shop.rewardType === "gift") {
+  const isGiftShop = shop.rewardType === "gift" || normalizeLookup(shop.category).indexOf("gift") !== -1;
+
+  if (isGiftShop) {
     let matchingBand = null;
     if (shop.rewardBands && shop.rewardBands.length > 0) {
       for (let i = 0; i < shop.rewardBands.length; i++) {
@@ -648,18 +650,37 @@ function calculateRewardDetails(shop, billAmount) {
       }
     }
     if (matchingBand) {
+      const giftItemsStr = String(matchingBand.giftItems || "");
+      const items = giftItemsStr.split(",")
+        .map(function(i) { return i.trim(); })
+        .filter(Boolean);
+      
+      const selectedGift = items.length > 0
+        ? items[Math.floor(Math.random() * items.length)]
+        : "Gift Reward";
+
       return {
         points: 0,
         rule: "gift-reward-band",
-        details: matchingBand.giftItems || "Gift Reward",
+        details: "Lucky Draw: " + selectedGift + " (from: " + giftItemsStr + ")",
         rewardType: "gift",
-        giftItems: matchingBand.giftItems || "",
+        giftItems: selectedGift,
       };
     } else {
+      let minRequired = Infinity;
+      if (shop.rewardBands && shop.rewardBands.length > 0) {
+        for (let i = 0; i < shop.rewardBands.length; i++) {
+          const minB = Number(shop.rewardBands[i].minBill || 0);
+          if (minB < minRequired) {
+            minRequired = minB;
+          }
+        }
+      }
+      const minText = Number.isFinite(minRequired) && minRequired > 0 ? "₹" + minRequired : "₹500";
       return {
         points: 0,
         rule: "gift-reward-fallback",
-        details: "No gift eligible (Min purchase ₹500)",
+        details: "No gift eligible (Min purchase " + minText + ")",
         rewardType: "gift",
         giftItems: "",
       };
@@ -969,6 +990,7 @@ function readPublicShops() {
       maxReward: 0,
       costPerScan: 0,
       rewardBands: [],
+      rewardType: shop.rewardType,
     }));
 }
 

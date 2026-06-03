@@ -479,4 +479,60 @@ describe("Gift reward shops (TestKirana)", () => {
       expect(result.transaction.giftItems).toBe("");
     }
   });
+
+  it("selects a random gift item from a comma-separated list when multiple exist", () => {
+    const listGiftShop = shop({
+      id: "TestListKirana",
+      name: "Test List Kirana",
+      maxReward: 1000,
+      rewardType: "gift",
+      rewardBands: [
+        { minBill: 100, giftItems: "Pen, Keychain, Diary" }
+      ]
+    });
+
+    // Mock random to select the second item: Keychain (Math.random() * 3 = 1.something -> index 1)
+    vi.spyOn(Math, "random").mockReturnValue(0.4); // 0.4 * 3 = 1.2 -> floor(1.2) = 1
+    const result = submitReward(
+      listGiftShop,
+      "Neha Patil",
+      "Pune",
+      "9876543210",
+      150,
+      [],
+      visitorContext
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.transaction.giftItems).toBe("Keychain");
+    }
+  });
+
+  it("automatically detects a gift shop if its category contains 'gift'", () => {
+    const categoryGiftShop = shop({
+      id: "CategoryGiftShop",
+      name: "Category Gift Shop",
+      category: "Special Gifts",
+      rewardType: "mudra", // Even if rewardType is mudra, category should override it
+      rewardBands: [
+        { minBill: 100, giftItems: "Special Mug" }
+      ]
+    });
+
+    const result = submitReward(
+      categoryGiftShop,
+      "Neha Patil",
+      "Pune",
+      "9876543210",
+      150,
+      [],
+      visitorContext
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.transaction.reward).toBe(0);
+      expect(result.transaction.rewardType).toBe("gift");
+      expect(result.transaction.giftItems).toBe("Special Mug");
+    }
+  });
 });

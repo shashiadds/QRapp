@@ -119,7 +119,7 @@ export const shops: Shop[] = [
     rewardBands: [
       { minBill: 500, maxBill: 999, giftItems: "250 gm sugar, 100gm बडीशोप, 100gm tea powder" },
       { minBill: 1000, maxBill: 1999, giftItems: "50 gm Colgate, Parle biscuit ₹50, Cadbury ₹50" },
-      { minBill: 2000, giftItems: "300 cashback OR next time 20% discount" }
+      { minBill: 2000, giftItems: "₹300 cashback, 20% discount coupon, Free Mug" }
     ]
   }
 ];

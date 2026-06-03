@@ -33,23 +33,38 @@ export function calculateReward(shop: Shop, billAmount: number): number {
 }
 
 function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculation {
-  if (shop.rewardType === "gift") {
+  const isGiftShop = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
+
+  if (isGiftShop) {
     const matchingBand = shop.rewardBands.find(
       (band) => billAmount >= (band.minBill ?? 0) && (!band.maxBill || billAmount <= band.maxBill)
     );
     if (matchingBand) {
+      const items = (matchingBand.giftItems || "")
+        .split(",")
+        .map((i) => i.trim())
+        .filter(Boolean);
+      const selectedGift = items.length > 0 
+        ? items[Math.floor(Math.random() * items.length)]
+        : "Gift Reward";
+
       return {
         points: 0,
         rule: "gift-reward-band",
-        details: matchingBand.giftItems || "Gift Reward",
+        details: `Lucky Draw: ${selectedGift} (from: ${matchingBand.giftItems || "Gift"})`,
         rewardType: "gift",
-        giftItems: matchingBand.giftItems || "",
+        giftItems: selectedGift,
       };
     } else {
+      const minRequired = shop.rewardBands.reduce(
+        (min, band) => Math.min(min, band.minBill ?? 0),
+        Infinity
+      );
+      const minText = Number.isFinite(minRequired) && minRequired > 0 ? `₹${minRequired}` : "₹500";
       return {
         points: 0,
         rule: "gift-reward-fallback",
-        details: "No gift eligible (Min purchase ₹500)",
+        details: `No gift eligible (Min purchase ${minText})`,
         rewardType: "gift",
         giftItems: "",
       };
