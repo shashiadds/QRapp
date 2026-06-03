@@ -229,6 +229,14 @@ function doPost(event) {
     return jsonResponse(deleteShop(body.shopId));
   }
 
+  if (body.action === "updateShop") {
+    const session = validateSession(body.token, ["admin"]);
+    if (!session.ok) {
+      return jsonResponse(session);
+    }
+    return jsonResponse(updateShop(body.shopId, body.shop));
+  }
+
   if (body.action === "archiveOldTransactions") {
     const session = validateSession(body.token, ["admin"]);
     if (!session.ok) {
@@ -554,6 +562,35 @@ function deleteShop(shopId) {
   for (let index = 1; index < values.length; index += 1) {
     if (String(values[index][idIndex]) === targetShopId) {
       sheet.getRange(index + 1, statusIndex + 1).setValue("deleted");
+      const shop = readShops().find((item) => item.id === targetShopId);
+      return { ok: true, shop: shop };
+    }
+  }
+
+  return { ok: false, reason: "Shop not found." };
+}
+
+function updateShop(shopId, shopData) {
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEETS.shops);
+  ensureHeaders(SHEETS.shops, HEADERS.shops);
+
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const idIndex = headers.indexOf("id");
+  const targetShopId = String(shopId);
+
+  for (let index = 1; index < values.length; index += 1) {
+    if (String(values[index][idIndex]) === targetShopId) {
+      headers.forEach((header, colIndex) => {
+        if (header === "id") return; // ID is immutable
+        if (shopData[header] !== undefined) {
+          let val = shopData[header];
+          if (header === "rewardBands" && typeof val !== "string") {
+            val = JSON.stringify(val);
+          }
+          sheet.getRange(index + 1, colIndex + 1).setValue(val);
+        }
+      });
       const shop = readShops().find((item) => item.id === targetShopId);
       return { ok: true, shop: shop };
     }

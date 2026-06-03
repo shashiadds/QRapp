@@ -99,3 +99,11 @@ export function deleteSheetsShop(shopId: string, session: Session | null) {
     token: session?.token,
   });
 }
+
+export function updateSheetsShop(shopId: string, shop: Partial<Shop>, session: Session | null) {
+  return request<{ ok: boolean; shop: Shop }>("updateShop", {
+    shopId,
+    shop,
+    token: session?.token,
+  });
+}

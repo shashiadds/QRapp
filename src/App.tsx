@@ -17,6 +17,8 @@ import {
   Trash2,
   Trophy,
   Users,
+  Pencil,
+  Plus,
 } from "lucide-react";
 import {
   fraudSignals as seedFraudSignals,
@@ -24,10 +26,20 @@ import {
   transactions as seedTransactions,
 } from "./data";
 import { submitReward } from "./rewardEngine";
-import { isSheetsConfigured, loadPublicData, loadSheetsData, submitSheetsReward, addSheetsShop, deleteSheetsShop, lookupSheetsCustomer } from "./sheetsApi";
+import {
+  isSheetsConfigured,
+  loadPublicData,
+  loadSheetsData,
+  submitSheetsReward,
+  addSheetsShop,
+  deleteSheetsShop,
+  updateSheetsShop,
+  lookupSheetsCustomer,
+} from "./sheetsApi";
 import type { FraudSignal, Session, Shop, Transaction, VisitorContext } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 import InvoiceModal from "./InvoiceModal";
+import ShopEditModal from "./ShopEditModal";
 
 type View = "customer" | "shop" | "admin";
 type ActiveSession = Session | null;
@@ -775,9 +787,13 @@ function AdminDashboard({
   const [newShopName, setNewShopName] = useState("");
   const [newShopCategory, setNewShopCategory] = useState("General");
   const [newShopMaxBillAmount, setNewShopMaxBillAmount] = useState("100000");
+  const [newShopType, setNewShopType] = useState<"mudra" | "gift">("mudra");
+  const [newShopMaxReward, setNewShopMaxReward] = useState("100");
+  const [newShopCostPerScan, setNewShopCostPerScan] = useState("10");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingShopId, setDeletingShopId] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
+  const [editingShop, setEditingShop] = useState<Shop | null>(null);
 
   const approved = transactions.filter((transaction) => transaction.status === "approved");
   const payout = approved.reduce((sum, item) => sum + item.reward, 0);
@@ -796,7 +812,22 @@ function AdminDashboard({
     try {
       if (isSheetsConfigured) {
         const result = await addSheetsShop(
-          { name: newShopName, category: newShopCategory, maxBillAmount: Number(newShopMaxBillAmount) },
+          {
+            name: newShopName,
+            category: newShopCategory,
+            maxBillAmount: Number(newShopMaxBillAmount),
+            maxReward: Number(newShopMaxReward),
+            costPerScan: Number(newShopCostPerScan),
+            rewardType: newShopType,
+            rewardBands: newShopType === "gift" ? [
+              { minBill: 0, maxBill: 1000, giftItems: "Pen, Keyring, Mug" },
+              { minBill: 1000, giftItems: "T-Shirt, Umbrella, Watch" }
+            ] : [
+              { reward: 10, probability: 80, minBill: 0 },
+              { reward: 50, probability: 15, minBill: 100 },
+              { reward: 100, probability: 5, minBill: 500 }
+            ]
+          },
           session
         );
         if (result.ok) {
@@ -805,6 +836,9 @@ function AdminDashboard({
           setNewShopName("");
           setNewShopCategory("General");
           setNewShopMaxBillAmount("100000");
+          setNewShopType("mudra");
+          setNewShopMaxReward("100");
+          setNewShopCostPerScan("10");
         } else {
           alert("Failed to create shop.");
         }
@@ -815,6 +849,31 @@ function AdminDashboard({
       alert("Error adding shop.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateShop = async (updatedFields: Partial<Shop>) => {
+    if (!editingShop) return;
+
+    try {
+      if (isSheetsConfigured) {
+        const result = await updateSheetsShop(editingShop.id, updatedFields, session);
+        if (result.ok) {
+          setShops(shops.map((s) => (s.id === editingShop.id ? result.shop : s)));
+        } else {
+          throw new Error("Failed to update shop configuration.");
+        }
+      } else {
+        const updatedShop: Shop = {
+          ...editingShop,
+          ...updatedFields,
+          rewardBands: updatedFields.rewardBands ?? editingShop.rewardBands,
+        };
+        setShops(shops.map((s) => (s.id === editingShop.id ? updatedShop : s)));
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error updating shop.");
+      throw err;
     }
   };
 
@@ -883,24 +942,57 @@ function AdminDashboard({
         {isAddingShop && (
           <div style={{ background: "rgba(0,0,0,0.05)", padding: "1rem", borderRadius: "8px", marginBottom: "1rem" }}>
             <form onSubmit={handleAddShop}>
-              <label>
-                Shop Name
-                <input value={newShopName} onChange={(e) => setNewShopName(e.target.value)} required />
-              </label>
-              <label>
-                Category
-                <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
-              </label>
-              <label>
-                Max Bill Amount
-                <input
-                  type="number"
-                  min="10"
-                  value={newShopMaxBillAmount}
-                  onChange={(e) => setNewShopMaxBillAmount(e.target.value)}
-                  required
-                />
-              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <label>
+                  Shop Name
+                  <input value={newShopName} onChange={(e) => setNewShopName(e.target.value)} required />
+                </label>
+                <label>
+                  Category
+                  <input value={newShopCategory} onChange={(e) => setNewShopCategory(e.target.value)} required />
+                </label>
+                <label>
+                  Max Bill Amount (₹)
+                  <input
+                    type="number"
+                    min="10"
+                    value={newShopMaxBillAmount}
+                    onChange={(e) => setNewShopMaxBillAmount(e.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Max Reward Cap (Mudra)
+                  <input
+                    type="number"
+                    min="1"
+                    value={newShopMaxReward}
+                    onChange={(e) => setNewShopMaxReward(e.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Cost Per Scan (₹)
+                  <input
+                    type="number"
+                    min="0"
+                    value={newShopCostPerScan}
+                    onChange={(e) => setNewShopCostPerScan(e.target.value)}
+                    required
+                  />
+                </label>
+                <label>
+                  Shop Reward Type
+                  <select
+                    value={newShopType}
+                    onChange={(e) => setNewShopType(e.target.value as "mudra" | "gift")}
+                    style={{ background: 'rgba(0,0,0,0.2)', color: 'var(--text-main)' }}
+                  >
+                    <option value="mudra">Mudra Points</option>
+                    <option value="gift">Lucky Draw Gift</option>
+                  </select>
+                </label>
+              </div>
               <button type="submit" disabled={isSubmitting} className="primary-action" style={{ marginTop: "0.5rem" }}>
                 {isSubmitting ? "Creating..." : "Create Shop"}
               </button>
@@ -945,6 +1037,16 @@ function AdminDashboard({
               <div className="shop-row-actions">
                 <span className={`status ${shop.status}`}>{shop.status}</span>
                 <button
+                  className="icon-button"
+                  type="button"
+                  title={`Edit ${shop.name}`}
+                  disabled={shop.status === "deleted"}
+                  onClick={() => setEditingShop(shop)}
+                  style={{ marginRight: '4px' }}
+                >
+                  <Pencil size={17} />
+                </button>
+                <button
                   className="icon-button danger-button"
                   type="button"
                   title={`Delete ${shop.name}`}
@@ -962,6 +1064,14 @@ function AdminDashboard({
       <AdminReports transactions={transactions} shops={shops} />
 
       <TransactionTable transactions={transactions} shops={shops} onViewInvoice={onViewInvoice} />
+
+      {editingShop && (
+        <ShopEditModal
+          shop={editingShop}
+          onClose={() => setEditingShop(null)}
+          onSave={handleUpdateShop}
+        />
+      )}
     </section>
   );
 }
