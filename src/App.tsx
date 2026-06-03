@@ -32,6 +32,7 @@ import {
   Gamepad2,
   Tv,
   Smartphone,
+  X,
 } from "lucide-react";
 import {
   fraudSignals as seedFraudSignals,
@@ -562,11 +563,17 @@ function CustomerFlow({
   const [giftState, setGiftState] = useState<"closed" | "opening" | "opened">("closed");
   const [isLookingUpCustomer, setIsLookingUpCustomer] = useState(false);
   const [lastTxn, setLastTxn] = useState<Transaction | null>(null);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   const matchedGift = useMemo(() => {
     if (lastTxn?.rewardType !== "gift" || !lastTxn?.giftItems) return null;
     const searchName = lastTxn.giftItems.toLowerCase().trim();
-    return gifts.find((g) => g.name.toLowerCase().trim() === searchName) || null;
+    const found = gifts.find((g) => g.name.toLowerCase().trim() === searchName);
+    if (found) return found;
+    return gifts.find((g) => {
+      const gName = g.name.toLowerCase().trim();
+      return gName.includes(searchName) || searchName.includes(gName);
+    }) || null;
   }, [lastTxn, gifts]);
 
   useEffect(() => {
@@ -779,7 +786,12 @@ function CustomerFlow({
               <div className="reward-content-pop">
                 {lastTxn?.rewardType === "gift" ? (
                   <>
-                    <div className="success-icon-wrap bounce gift-icon-wrap">
+                    <div 
+                      className="success-icon-wrap bounce gift-icon-wrap" 
+                      onClick={() => setIsImageZoomed(true)}
+                      title="Click to view full image"
+                      style={{ cursor: "pointer" }}
+                    >
                       <GiftImageWithFallback 
                         src={matchedGift?.imageUrl} 
                         alt={lastTxn.giftItems} 
@@ -791,6 +803,9 @@ function CustomerFlow({
                     <strong className="reward-amount gift-title-amount">
                       {lastTxn.giftItems || "No gift eligible"}
                     </strong>
+                    <p className="tap-to-zoom-hint" onClick={() => setIsImageZoomed(true)}>
+                      🔍 Tap image to zoom
+                    </p>
                   </>
                 ) : (
                   <>
@@ -820,6 +835,26 @@ function CustomerFlow({
           </div>
         )}
       </div>
+
+      {isImageZoomed && (
+        <div className="invoice-modal-overlay" onClick={() => setIsImageZoomed(false)}>
+          <div className="gift-zoom-card" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setIsImageZoomed(false)} aria-label="Close image">
+              <X size={24} />
+            </button>
+            <div className="gift-zoom-image-container">
+              <GiftImageWithFallback 
+                src={matchedGift?.imageUrl} 
+                alt={lastTxn?.giftItems} 
+                className="gift-zoom-image"
+                fallbackElement={getGiftIcon(lastTxn?.giftItems || "")}
+              />
+            </div>
+            <h3 className="gift-zoom-title">{lastTxn?.giftItems}</h3>
+            <p className="muted-note">Tap anywhere outside to close</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

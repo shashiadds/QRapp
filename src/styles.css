@@ -1836,3 +1836,111 @@ th {
   transform: scale(1.15);
 }
 
+/* Interactive Gift Zoom styling */
+.gift-icon-wrap {
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+.gift-icon-wrap:hover {
+  transform: scale(1.1) rotate(2deg);
+  box-shadow: 0 10px 25px rgba(167, 139, 250, 0.35);
+}
+
+.tap-to-zoom-hint {
+  font-size: 13px;
+  color: #a78bfa;
+  cursor: pointer;
+  margin-top: 6px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  font-weight: 500;
+}
+
+.tap-to-zoom-hint:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  color: #c084fc;
+}
+
+.gift-zoom-card {
+  background: rgba(17, 24, 39, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(167, 139, 250, 0.15);
+  border-radius: 20px;
+  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 320px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  animation: modalScaleUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.gift-zoom-card .close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #94a3b8;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gift-zoom-card .close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+.gift-zoom-image-container {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.gift-zoom-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+.gift-zoom-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0.5rem 0;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+
