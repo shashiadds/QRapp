@@ -22,18 +22,11 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
   );
   const [mudraMode, setMudraMode] = useState<"fixed" | "percent">(hasPercent ? "percent" : "fixed");
 
-  const [bands, setBands] = useState<RewardBand[]>([]);
+  const [bands, setBands] = useState<RewardBand[]>(() => {
+    return shop.rewardBands ? JSON.parse(JSON.stringify(shop.rewardBands)) : [];
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // Load and sanitize reward bands depending on the selected shop type & mudra mode
-  useEffect(() => {
-    if (shop.rewardBands) {
-      setBands(JSON.parse(JSON.stringify(shop.rewardBands)));
-    } else {
-      setBands([]);
-    }
-  }, [shop.rewardBands]);
 
   // Adjust bands when rewardType or mudraMode changes to provide smart defaults
   const handleRewardTypeChange = (type: "mudra" | "gift") => {
