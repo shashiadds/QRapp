@@ -288,79 +288,82 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
             )}
           </div>
 
-          <div className="bands-table-wrapper">
-            <table>
-              <thead>
+          <div className="bands-table-wrapper" style={{ display: 'block', overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', padding: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', display: 'table' }}>
+              <thead style={{ display: 'table-header-group' }}>
                 {rewardType === "gift" ? (
-                  <tr>
-                    <th>Min Bill (₹)</th>
-                    <th>Max Bill (₹)</th>
-                    <th>Gift Items (comma-separated list)</th>
-                    <th style={{ width: "60px" }}>Actions</th>
+                  <tr style={{ display: 'table-row' }}>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Min Bill (₹)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Max Bill (₹)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Gift Items (comma-separated list)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'center', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold', width: "60px" }}>Actions</th>
                   </tr>
                 ) : mudraMode === "fixed" ? (
-                  <tr>
-                    <th>Reward (Points)</th>
-                    <th>Probability (%)</th>
-                    <th>Min Bill (₹)</th>
-                    <th style={{ width: "60px" }}>Actions</th>
+                  <tr style={{ display: 'table-row' }}>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Reward (Points)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Probability (%)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Min Bill (₹)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'center', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold', width: "60px" }}>Actions</th>
                   </tr>
                 ) : (
-                  <tr>
-                    <th>Min Bill (₹)</th>
-                    <th>Max Bill (₹)</th>
-                    <th>Min Percent (%)</th>
-                    <th>Max Percent (%)</th>
-                    <th>Prob (%)</th>
-                    <th style={{ width: "60px" }}>Actions</th>
+                  <tr style={{ display: 'table-row' }}>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Min Bill (₹)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Max Bill (₹)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Min Percent (%)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Max Percent (%)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'left', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>Prob (%)</th>
+                    <th style={{ display: 'table-cell', textAlign: 'center', padding: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 'bold', width: "60px" }}>Actions</th>
                   </tr>
                 )}
               </thead>
-              <tbody>
+              <tbody style={{ display: 'table-row-group' }}>
                 {bands.map((band, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} style={{ display: 'table-row', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     {rewardType === "gift" ? (
                       <>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             placeholder="0"
                             min="0"
                             value={band.minBill ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "minBill", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             placeholder="Unlimited"
                             min="0"
                             value={band.maxBill ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "maxBill", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="text"
                             placeholder="Mug, Keychain, Pen"
                             value={band.giftItems ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "giftItems", e.target.value)}
-                            style={{ minWidth: "220px" }}
+                            style={{ minWidth: "220px", width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
                       </>
                     ) : mudraMode === "fixed" ? (
                       <>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="1"
                             value={band.reward ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "reward", e.target.value)}
                             required
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="0"
@@ -368,39 +371,43 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
                             value={band.probability ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "probability", e.target.value)}
                             required
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="0"
                             placeholder="0"
                             value={band.minBill ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "minBill", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             placeholder="0"
                             min="0"
                             value={band.minBill ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "minBill", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             placeholder="Unlimited"
                             min="0"
                             value={band.maxBill ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "maxBill", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="0"
@@ -410,9 +417,10 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
                             value={band.minPercent ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "minPercent", e.target.value)}
                             required
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="0"
@@ -422,9 +430,10 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
                             value={band.maxPercent ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "maxPercent", e.target.value)}
                             required
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
-                        <td>
+                        <td style={{ display: 'table-cell', padding: '8px' }}>
                           <input
                             type="number"
                             min="0"
@@ -432,16 +441,18 @@ export default function ShopEditModal({ shop, onClose, onSave }: ShopEditModalPr
                             placeholder="100"
                             value={band.probability ?? ""}
                             onChange={(e) => handleBandFieldChange(idx, "probability", e.target.value)}
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '4px', padding: '6px 8px' }}
                           />
                         </td>
                       </>
                     )}
-                    <td>
+                    <td style={{ display: 'table-cell', padding: '8px', textAlign: 'center' }}>
                       <button
                         type="button"
                         className="danger-row-btn"
                         onClick={() => handleDeleteBand(idx)}
                         title="Delete Slab"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
                       >
                         <Trash2 size={16} />
                       </button>
