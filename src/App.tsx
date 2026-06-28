@@ -60,7 +60,7 @@ import { loadVisitorContext } from "./visitorContext";
 import InvoiceModal from "./InvoiceModal";
 import ShopEditModal from "./ShopEditModal";
 
-type View = "customer" | "shop" | "admin";
+type View = "customer" | "shop" | "admin" | "leads";
 type ActiveSession = Session | null;
 
 function getGiftIcon(giftItemName: string) {
@@ -507,6 +507,24 @@ function App() {
           </div>
         )
       )}
+      {view === "leads" && (
+        !session || needsFreshLogin || sessionRole !== "admin" ? (
+          <Login title="Admin Login" expectedRole="admin" onLogin={handleLogin} />
+        ) : (
+          <div className="dashboard">
+            <button style={{ float: "right", margin: "1rem" }} onClick={handleLogout}>
+              Logout
+            </button>
+            <div className="dashboard-heading">
+              <div>
+                <span>Admin Panel</span>
+                <h1>Registrations</h1>
+              </div>
+            </div>
+            <LeadTable leads={leads} />
+          </div>
+        )
+      )}
       <InvoiceModal transaction={invoiceTxn} shops={shops} onClose={() => setInvoiceTxn(null)} />
     </main>
   );
@@ -525,6 +543,7 @@ function TopBar({
     { id: "customer", label: "Customer", icon: ScanLine },
     { id: "shop", label: "Shop", icon: Store },
     { id: "admin", label: "Admin", icon: ShieldCheck },
+    { id: "leads", label: "Registrations", icon: Trophy },
   ];
 
   return (
@@ -1835,8 +1854,6 @@ function AdminDashboard({
       <AdminReports transactions={transactions} shops={shops} />
 
       <TransactionTable transactions={transactions} shops={shops} onViewInvoice={onViewInvoice} />
-
-      <LeadTable leads={leads} />
 
       {editingShop && (
         <ShopEditModal
