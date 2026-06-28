@@ -73,6 +73,27 @@ export function submitSheetsReward(
   });
 }
 
+export function submitSheetsLead(
+  customerName: string,
+  address: string,
+  mobile: string,
+  email: string,
+  agreement: boolean,
+  visitorContext: VisitorContext
+) {
+  return request<{ ok: boolean; lead: any }>("submitLead", {
+    customerName,
+    address,
+    mobile,
+    email,
+    agreement: agreement ? "Yes" : "No",
+    ipAddress: visitorContext.ipAddress,
+    location: visitorContext.location,
+    latitude: visitorContext.latitude,
+    longitude: visitorContext.longitude,
+  });
+}
+
 export function lookupSheetsCustomer(mobile: string) {
   return request<{ ok: boolean; found: boolean; customerName?: string; address?: string }>("lookupCustomer", {
     mobile,

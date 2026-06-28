@@ -45,6 +45,7 @@ import {
   loadPublicData,
   loadSheetsData,
   submitSheetsReward,
+  submitSheetsLead,
   addSheetsShop,
   deleteSheetsShop,
   updateSheetsShop,
@@ -54,7 +55,7 @@ import {
   updateSheetsGift,
   uploadSheetsGiftImage,
 } from "./sheetsApi";
-import type { FraudSignal, Session, Shop, Transaction, VisitorContext, GiftItem } from "./types";
+import type { FraudSignal, Session, Shop, Transaction, VisitorContext, GiftItem, Lead } from "./types";
 import { loadVisitorContext } from "./visitorContext";
 import InvoiceModal from "./InvoiceModal";
 import ShopEditModal from "./ShopEditModal";
@@ -291,6 +292,20 @@ function App() {
   );
   const [hasLoadedArchive, setHasLoadedArchive] = useState(false);
   const [invoiceTxn, setInvoiceTxn] = useState<Transaction | null>(null);
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    if (isSheetsConfigured) {
+      return [];
+    }
+    const saved = localStorage.getItem("smart-mudra-leads");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    if (isSheetsConfigured) {
+      return;
+    }
+    localStorage.setItem("smart-mudra-leads", JSON.stringify(leads));
+  }, [leads]);
 
   useEffect(() => {
     if (isSheetsConfigured) {
@@ -350,6 +365,9 @@ function App() {
         setFraudSignals(data.fraudSignals);
         setShopPasswords(data.shopPasswords || {});
         setGifts(data.gifts || []);
+        if (data.leads) {
+          setLeads(data.leads);
+        }
         setDataStatus("Google Sheets connected");
         setHasLoadedArchive(true);
       })
@@ -377,14 +395,19 @@ function App() {
     setSession(null);
     setTransactions([]);
     setFraudSignals([]);
+    setLeads([]);
     setHasLoadedArchive(false);
   };
+
+  const isLeadPage = params.get("lead") === "true";
 
   return (
     <main>
       <TopBar view={view} setView={setView} dataStatus={dataStatus} />
       {view === "customer" && (
-        selectedShop ? (
+        isLeadPage ? (
+          <LeadContestFlow leads={leads} setLeads={setLeads} />
+        ) : selectedShop ? (
           <CustomerFlow
             shop={selectedShop}
             shops={shops}
@@ -536,6 +559,197 @@ function TopBar({
   );
 }
 
+function LeadContestFlow({
+  leads,
+  setLeads,
+}: {
+  leads: Lead[];
+  setLeads: (leads: Lead[]) => void;
+}) {
+  const [customerName, setCustomerName] = useState("");
+  const [address, setAddress] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
+  const [agreement, setAgreement] = useState(false);
+  const [phase, setPhase] = useState<"form" | "processing" | "thankYou">("form");
+  const [message, setMessage] = useState("");
+  const [visitorContext, setVisitorContext] = useState<VisitorContext>(fallbackVisitorContext);
+
+  useEffect(() => {
+    loadVisitorContext({ includeDeviceLocation: true }).then(setVisitorContext);
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim()) {
+      setMessage("Enter customer name.");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(mobile.trim())) {
+      setMessage("Enter a valid 10 digit mobile number.");
+      return;
+    }
+    if (!address.trim()) {
+      setMessage("Enter customer address.");
+      return;
+    }
+    if (!agreement) {
+      setMessage("You must agree to participate in this membership contest.");
+      return;
+    }
+
+    setPhase("processing");
+    setMessage("");
+
+    window.setTimeout(async () => {
+      try {
+        if (isSheetsConfigured) {
+          const result = await submitSheetsLead(
+            customerName.trim(),
+            address.trim(),
+            mobile.trim(),
+            email.trim(),
+            agreement,
+            visitorContext
+          );
+          if (result.ok && result.lead) {
+            setLeads([result.lead, ...leads]);
+            setPhase("thankYou");
+          } else {
+            setPhase("form");
+            setMessage("Failed to submit lead.");
+          }
+        } else {
+          const newLead: Lead = {
+            id: "LEAD-" + Math.floor(100000 + Math.random() * 900000),
+            customerName: customerName.trim(),
+            mobile: mobile.trim(),
+            email: email.trim(),
+            address: address.trim(),
+            agreement: "Yes",
+            ipAddress: visitorContext.ipAddress,
+            location: visitorContext.location,
+            latitude: visitorContext.latitude,
+            longitude: visitorContext.longitude,
+            timestamp: new Date().toISOString(),
+          };
+          setLeads([newLead, ...leads]);
+          setPhase("thankYou");
+        }
+      } catch (error) {
+        setPhase("form");
+        setMessage(error instanceof Error ? error.message : "Could not submit lead.");
+      }
+    }, 850);
+  };
+
+  return (
+    <section className="customer-shell">
+      <div className="customer-panel" style={{ borderTopColor: "var(--accent-secondary)" }}>
+        <div className="shop-strip" style={{ background: "#2e1a47" }}>
+          <div>
+            <span>Exclusive Contest</span>
+            <h1>Membership Contest</h1>
+          </div>
+        </div>
+
+        {phase === "form" && (
+          <form className="form-stack" onSubmit={handleSubmit}>
+            <div className="headline">
+              <Trophy size={34} style={{ color: "var(--accent-secondary)" }} />
+              <h2>Membership Registration</h2>
+              <p>Enter your details below to register for the contest.</p>
+            </div>
+            
+            <label>
+              Mobile number
+              <input
+                autoComplete="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={mobile}
+                onChange={(event) => setMobile(event.target.value.replace(/\D/g, ""))}
+                required
+              />
+            </label>
+            <label>
+              Customer name
+              <input
+                autoComplete="name"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Email (optional)
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <label>
+              Address
+              <textarea
+                autoComplete="street-address"
+                rows={3}
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                required
+              />
+            </label>
+
+            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginTop: "8px", textAlign: "left" }}>
+              <input
+                id="agreement"
+                type="checkbox"
+                checked={agreement}
+                onChange={(e) => setAgreement(e.target.checked)}
+                style={{ width: "20px", height: "20px", minHeight: "20px", marginTop: "2px", cursor: "pointer" }}
+                required
+              />
+              <label htmlFor="agreement" style={{ fontWeight: "normal", fontSize: "14px", cursor: "pointer", color: "var(--text-main)" }}>
+                I agree to participate in this membership contest
+              </label>
+            </div>
+
+            {message && <p className="error">{message}</p>}
+            
+            <button className="primary-action" type="submit" style={{ background: "linear-gradient(135deg, var(--accent-secondary), var(--accent-primary))", cursor: "pointer" }}>
+              <Trophy size={20} />
+              Submit Registration
+            </button>
+          </form>
+        )}
+
+        {phase === "processing" && (
+          <div className="processing">
+            <div className="spinner" style={{ borderTopColor: "var(--accent-secondary)" }} />
+            <h2>Registering...</h2>
+          </div>
+        )}
+
+        {phase === "thankYou" && (
+          <div className="reward-reveal success-surface" style={{ minHeight: "340px" }}>
+            <div className="success-icon-wrap bounce" style={{ background: "rgba(139, 92, 246, 0.15)" }}>
+              <Trophy size={48} color="var(--accent-secondary)" />
+            </div>
+            <h2 style={{ fontSize: "24px", color: "var(--text-main)", marginBottom: "8px" }}>Successfully registered for membership!</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "15px", lineHeight: "1.5", maxWidth: "300px", margin: "0 auto 1.5rem auto" }}>
+              Thank you, <strong>{customerName}</strong>! We have successfully registered you (mobile: {mobile}) for the membership contest.
+            </p>
+            <p className="reward-thank-you" style={{ color: "var(--accent-success)", fontWeight: 600 }}>
+              Good luck! 🎉
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function CustomerFlow({
   shop,
   shops,
@@ -551,7 +765,9 @@ function CustomerFlow({
   setSelectedShopId: (shopId: string) => void;
   gifts: GiftItem[];
 }) {
-  const isGiftShop = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
+  const isGiftShop = shop.rewardType === "gift" || 
+    (shop.rewardType !== "mudra" && shop.category.toLowerCase().includes("gift")) ||
+    (shop.category.toLowerCase().includes("gift") && (shop.rewardBands || []).some((band) => band.giftItems));
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
@@ -979,6 +1195,7 @@ function AdminDashboard({
   onViewInvoice,
   gifts,
   setGifts,
+  leads = [],
 }: {
   shops: Shop[];
   setShops: (shops: Shop[]) => void;
@@ -989,6 +1206,7 @@ function AdminDashboard({
   onViewInvoice?: (transaction: Transaction) => void;
   gifts: GiftItem[];
   setGifts: (gifts: GiftItem[]) => void;
+  leads?: Lead[];
 }) {
   const [isAddingShop, setIsAddingShop] = useState(false);
   const [newShopName, setNewShopName] = useState("");
@@ -1030,7 +1248,9 @@ function AdminDashboard({
     shops
       .filter((shop) => shop.status !== "deleted")
       .forEach((shop) => {
-        const isGift = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
+        const isGift = shop.rewardType === "gift" || 
+          (shop.rewardType !== "mudra" && shop.category.toLowerCase().includes("gift")) ||
+          (shop.category.toLowerCase().includes("gift") && (shop.rewardBands || []).some((band) => band.giftItems));
         if (isGift && shop.rewardBands) {
           shop.rewardBands.forEach((band) => {
             if (band.giftItems) {
@@ -1616,6 +1836,8 @@ function AdminDashboard({
 
       <TransactionTable transactions={transactions} shops={shops} onViewInvoice={onViewInvoice} />
 
+      <LeadTable leads={leads} />
+
       {editingShop && (
         <ShopEditModal
           shop={editingShop}
@@ -2115,6 +2337,238 @@ function PaginationControls({
         </button>
       </div>
     </div>
+  );
+}
+
+function LeadTable({
+  leads = [],
+}: {
+  leads: Lead[];
+}) {
+  const [query, setQuery] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const filteredLeads = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return leads.filter((lead) => {
+      const date = lead.timestamp ? getDateKey(lead.timestamp) : "";
+      const searchable = [
+        lead.mobile,
+        lead.customerName,
+        lead.email,
+        lead.address,
+        lead.location,
+      ].join(" ").toLowerCase();
+
+      if (normalizedQuery && !searchable.includes(normalizedQuery)) return false;
+      if (fromDate && date < fromDate) return false;
+      if (toDate && date > toDate) return false;
+      return true;
+    });
+  }, [fromDate, query, toDate, leads]);
+
+  const dateRangeLabel = `${fromDate ? formatDateKey(fromDate) : "Any start date"} to ${toDate ? formatDateKey(toDate) : "Any end date"}`;
+
+  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const visibleLeads = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLeads.slice(start, start + pageSize);
+  }, [currentPage, filteredLeads, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [fromDate, pageSize, query, toDate]);
+
+  return (
+    <section className="surface table-surface" style={{ marginTop: "18px" }}>
+      <div className="section-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Trophy size={20} style={{ color: "var(--accent-secondary)" }} />
+          <h2>Membership Contests ({filteredLeads.length})</h2>
+        </div>
+        <button 
+          className="secondary-action" 
+          style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
+          onClick={() => {
+            const headers = ["Date", "Time", "Mobile", "Name", "Email", "Address", "Agreement", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const rows = filteredLeads.map(l => [
+              formatTransactionDate(l.timestamp),
+              formatTransactionTime(l.timestamp),
+              l.mobile,
+              l.customerName,
+              l.email || "",
+              l.address,
+              l.agreement,
+              l.timestamp,
+              l.ipAddress,
+              l.location,
+              l.latitude || "",
+              l.longitude || ""
+            ]);
+            downloadCSV("membership_contests.csv", [headers, ...rows]);
+          }}
+          disabled={filteredLeads.length === 0}
+        >
+          <Download size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+          Download CSV
+        </button>
+      </div>
+
+      <div className="filter-bar">
+        <div className="filter-search">
+          <label>
+            Search registrations
+            <input
+              placeholder="Search by name, mobile, email..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            From
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            To
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
+          </label>
+        </div>
+        <div>
+          <label>
+            Page size
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              style={{ background: 'rgba(0,0,0,0.2)', color: 'var(--text-main)', minHeight: '44px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px' }}
+            >
+              <option value={5}>5 per page</option>
+              <option value={10}>10 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+            </select>
+          </label>
+        </div>
+        <button
+          className="secondary-action filter-clear"
+          type="button"
+          onClick={() => {
+            setQuery("");
+            setFromDate("");
+            setToDate("");
+          }}
+          style={{ cursor: 'pointer' }}
+        >
+          Clear
+        </button>
+      </div>
+
+      {(query || fromDate || toDate) && (
+        <div className="filter-summary">
+          Showing registrations filtered by query "{query || 'none'}" in range {dateRangeLabel}.
+        </div>
+      )}
+
+      {visibleLeads.length === 0 ? (
+        <p className="muted-note" style={{ textAlign: "center", padding: "2rem" }}>
+          No membership contests found matching the filters.
+        </p>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Agreement</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleLeads.map((lead) => (
+                <tr key={lead.id}>
+                  <td>
+                    <strong>{formatTransactionDate(lead.timestamp)}</strong>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      {formatTransactionTime(lead.timestamp)}
+                    </div>
+                  </td>
+                  <td>
+                    <strong>{lead.customerName}</strong>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      ID: {lead.id}
+                    </div>
+                  </td>
+                  <td>{lead.mobile}</td>
+                  <td>{lead.email || <span style={{ color: "var(--text-muted)" }}>None</span>}</td>
+                  <td style={{ maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "normal" }} title={lead.address}>
+                    {lead.address}
+                  </td>
+                  <td>
+                    <span className="status approved" style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--accent-success)" }}>
+                      {lead.agreement}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: "13px" }}>{lead.location}</div>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                      IP: {lead.ipAddress}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="pagination-row">
+        <span>
+          Showing {filteredLeads.length ? (currentPage - 1) * pageSize + 1 : 0}-{Math.min(currentPage * pageSize, filteredLeads.length)} of {filteredLeads.length} registrations
+        </span>
+        <div className="pagination-actions">
+          <button
+            className="secondary-action"
+            type="button"
+            disabled={currentPage <= 1}
+            onClick={() => setPage(currentPage - 1)}
+            style={{ cursor: currentPage <= 1 ? 'not-allowed' : 'pointer' }}
+          >
+            Previous
+          </button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="secondary-action"
+            type="button"
+            disabled={currentPage >= totalPages}
+            onClick={() => setPage(currentPage + 1)}
+            style={{ cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer' }}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 

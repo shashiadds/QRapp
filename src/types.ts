@@ -65,6 +65,21 @@ export type AppData = {
   fraudSignals: FraudSignal[];
   shopPasswords?: Record<string, string>;
   gifts: GiftItem[];
+  leads?: Lead[];
+};
+
+export type Lead = {
+  id: string;
+  customerName: string;
+  mobile: string;
+  email: string;
+  address: string;
+  agreement: string;
+  ipAddress: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  timestamp: string;
 };
 
 export type PublicAppData = {

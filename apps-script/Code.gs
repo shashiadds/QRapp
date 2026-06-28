@@ -6,6 +6,8 @@ const SHEETS = {
   admins: "admins",
   sessions: "sessions",
   gifts: "gifts",
+  customers: "customers",
+  leads: "leads",
 };
 
 const TRANSACTION_HISTORY_SHEETS = [
@@ -49,6 +51,7 @@ const HEADERS = {
     "longitude",
     "rewardType",
     "giftItems",
+    "email",
   ],
   transactionArchive: [
     "id",
@@ -68,11 +71,14 @@ const HEADERS = {
     "longitude",
     "rewardType",
     "giftItems",
+    "email",
   ],
   fraud: ["mobile", "shopId", "attempts", "status", "updatedAt"],
   admins: ["username", "password", "passwordSalt", "passwordHash", "role", "shopId"],
   sessions: ["token", "username", "role", "shopId", "expiresAt", "createdAt"],
   gifts: ["id", "name", "imageUrl"],
+  customers: ["email", "mobile", "name", "address", "passwordSalt", "passwordHash", "updatedAt"],
+  leads: ["id", "customerName", "mobile", "email", "address", "agreement", "ipAddress", "location", "latitude", "longitude", "timestamp"],
 };
 
 const SEED_SHOPS = [
@@ -168,6 +174,7 @@ function doGet(event) {
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
       shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
       gifts: readGifts(),
+      leads: normalizeLookup(session.role) === "admin" ? readLeads() : [],
     });
   }
 
@@ -191,6 +198,7 @@ function doPost(event) {
       fraudSignals: normalizeLookup(session.role) === "admin" ? readFraudSignals() : readFraudSignals().filter((signal) => canReadShop(session, signal.shopId)),
       shopPasswords: normalizeLookup(session.role) === "admin" ? readShopPasswords() : {},
       gifts: readGifts(),
+      leads: normalizeLookup(session.role) === "admin" ? readLeads() : [],
     });
   }
 
@@ -205,9 +213,34 @@ function doPost(event) {
         body.latitude,
         body.longitude,
         body.mobile,
-        Number(body.billAmount)
+        Number(body.billAmount),
+        body.email
       )
     );
+  }
+
+  if (body.action === "submitLead") {
+    return jsonResponse(
+      submitLead(
+        body.customerName,
+        body.address,
+        body.mobile,
+        body.email,
+        body.agreement,
+        body.ipAddress,
+        body.location,
+        body.latitude,
+        body.longitude
+      )
+    );
+  }
+
+  if (body.action === "customerLogin") {
+    return jsonResponse(customerLogin(body.identifier, body.password));
+  }
+
+  if (body.action === "customerSignUp") {
+    return jsonResponse(customerSignUp(body.customer));
   }
 
   if (body.action === "lookupCustomer") {
@@ -743,7 +776,8 @@ function submitReward(
   latitude,
   longitude,
   mobile,
-  billAmount
+  billAmount,
+  email
 ) {
   const shop = readShops().find((item) => item.id === shopId);
 
@@ -795,9 +829,11 @@ function submitReward(
     giftItems: rewardCalculation.giftItems || "",
     status: "approved",
     timestamp: new Date().toISOString(),
+    email: String(email || "").trim().toLowerCase(),
   };
 
   appendObject(SHEETS.transactions, HEADERS.transactions, transaction);
+  saveCustomerProfile(email || "", mobile, customerName, address);
   return { ok: true, transaction };
 }
 
@@ -806,7 +842,9 @@ function calculateReward(shop, billAmount) {
 }
 
 function calculateRewardDetails(shop, billAmount) {
-  const isGiftShop = shop.rewardType === "gift" || normalizeLookup(shop.category).indexOf("gift") !== -1;
+  const isGiftShop = shop.rewardType === "gift" || 
+    (shop.rewardType !== "mudra" && normalizeLookup(shop.category).indexOf("gift") !== -1) ||
+    (normalizeLookup(shop.category).indexOf("gift") !== -1 && shop.rewardBands && shop.rewardBands.some(function(band) { return band.giftItems; }));
 
   if (isGiftShop) {
     let matchingBand = null;
@@ -1186,6 +1224,7 @@ function readTransactions(includeArchive) {
       giftItems: String(row.giftItems || ""),
       status: String(row.status),
       timestamp: String(row.timestamp),
+      email: String(row.email || ""),
     }))
     .reverse();
 }
@@ -1197,9 +1236,10 @@ function lookupCustomer(mobile) {
   }
 
   const transactions = readTransactions(true).filter((transaction) => {
-    const transactionMobile = String(transaction.mobile || "").replace(/\D/g, "");
+    const transactionMobileNorm = normalizeMobile(transaction.mobile);
+    const targetMobileNorm = normalizeMobile(targetMobile);
     const status = normalizeLookup(transaction.status);
-    return transactionMobile === targetMobile && (!status || status === "approved");
+    return transactionMobileNorm === targetMobileNorm && (!status || status === "approved");
   });
 
   if (!transactions.length) {
@@ -1561,4 +1601,237 @@ function updateSrujanPassword() {
     }
   }
   Logger.log("Could not find shop 'srujankidshouse' in the admins sheet.");
+}
+
+function saveCustomerProfile(email, mobile, name, address, password) {
+  const sheet = getSheetByNameCaseInsensitive(SHEETS.customers);
+  ensureHeaders(SHEETS.customers, HEADERS.customers);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const emailIdx = headers.indexOf("email");
+  const mobileIdx = headers.indexOf("mobile");
+  const nameIdx = headers.indexOf("name");
+  const addressIdx = headers.indexOf("address");
+  const passwordSaltIdx = headers.indexOf("passwordSalt");
+  const passwordHashIdx = headers.indexOf("passwordHash");
+  const updatedAtIdx = headers.indexOf("updatedAt");
+
+  const targetEmail = String(email || "").trim().toLowerCase();
+  const targetMobile = String(mobile || "").replace(/\D/g, "");
+
+  let foundRow = -1;
+
+  const targetMobileNorm = normalizeMobile(targetMobile);
+  for (let i = 1; i < values.length; i++) {
+    const rowEmail = String(values[i][emailIdx]).trim().toLowerCase();
+    const rowMobileNorm = normalizeMobile(values[i][mobileIdx]);
+    if ((targetEmail && rowEmail === targetEmail) || (targetMobileNorm && rowMobileNorm === targetMobileNorm)) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  const timestamp = new Date().toISOString();
+  let salt = "";
+  let hash = "";
+  if (password) {
+    const record = hashPassword(password);
+    salt = record.salt;
+    hash = record.hash;
+  }
+
+  if (foundRow !== -1) {
+    if (name) sheet.getRange(foundRow, nameIdx + 1).setValue(String(name).trim());
+    if (mobile) sheet.getRange(foundRow, mobileIdx + 1).setValue(targetMobile);
+    if (email) sheet.getRange(foundRow, emailIdx + 1).setValue(targetEmail);
+    if (address) sheet.getRange(foundRow, addressIdx + 1).setValue(String(address).trim());
+    if (password) {
+      sheet.getRange(foundRow, passwordSaltIdx + 1).setValue(salt);
+      sheet.getRange(foundRow, passwordHashIdx + 1).setValue(hash);
+    }
+    sheet.getRange(foundRow, updatedAtIdx + 1).setValue(timestamp);
+  } else {
+    appendObject(SHEETS.customers, HEADERS.customers, {
+      email: targetEmail,
+      mobile: targetMobile,
+      name: String(name || "").trim(),
+      address: String(address || "").trim(),
+      passwordSalt: salt,
+      passwordHash: hash,
+      updatedAt: timestamp
+    });
+  }
+}
+
+function customerLogin(identifier, password) {
+  ensureHeaders(SHEETS.customers, HEADERS.customers);
+  const sheet = getSheetByNameCaseInsensitive(SHEETS.customers);
+  const values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return { ok: false, reason: "Customer not found. Please register." };
+  }
+
+  const headers = values[0];
+  const emailIdx = headers.indexOf("email");
+  const mobileIdx = headers.indexOf("mobile");
+  const nameIdx = headers.indexOf("name");
+  const addressIdx = headers.indexOf("address");
+  const passwordSaltIdx = headers.indexOf("passwordSalt");
+  const passwordHashIdx = headers.indexOf("passwordHash");
+
+  const target = String(identifier || "").trim().toLowerCase();
+  const targetCleanNorm = normalizeMobile(target.replace(/\D/g, ""));
+
+  let foundCustomer = null;
+
+  for (let i = 1; i < values.length; i++) {
+    const rowEmail = String(values[i][emailIdx]).trim().toLowerCase();
+    const rowMobile = String(values[i][mobileIdx]).replace(/\D/g, "");
+    const rowMobileNorm = normalizeMobile(rowMobile);
+    if ((target && rowEmail === target) || (targetCleanNorm && rowMobileNorm === targetCleanNorm)) {
+      const salt = String(values[i][passwordSaltIdx] || "");
+      const hash = String(values[i][passwordHashIdx] || "");
+      if (!password || verifyPassword(password, salt, hash)) {
+        foundCustomer = {
+          email: rowEmail,
+          mobile: rowMobile,
+          name: String(values[i][nameIdx]),
+          address: String(values[i][addressIdx])
+        };
+        break;
+      } else {
+        return { ok: false, reason: "Invalid password." };
+      }
+    }
+  }
+
+  if (!foundCustomer) {
+    return { ok: false, reason: "Customer profile not found." };
+  }
+
+  // Find all transactions for this customer
+  const transactions = readTransactions(true).filter((tx) => {
+    const txEmail = String(tx.email || "").trim().toLowerCase();
+    const txMobileNorm = normalizeMobile(tx.mobile);
+    const custMobileNorm = normalizeMobile(foundCustomer.mobile);
+    const status = normalizeLookup(tx.status);
+    return (
+      (!status || status === "approved") &&
+      ((foundCustomer.email && txEmail === foundCustomer.email) ||
+       (custMobileNorm && txMobileNorm === custMobileNorm))
+    );
+  });
+
+  return { ok: true, customer: foundCustomer, transactions: transactions };
+}
+
+function customerSignUp(customerData) {
+  ensureHeaders(SHEETS.customers, HEADERS.customers);
+  const sheet = getSheetByNameCaseInsensitive(SHEETS.customers);
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const emailIdx = headers.indexOf("email");
+  const mobileIdx = headers.indexOf("mobile");
+
+  const email = String(customerData.email || "").trim().toLowerCase();
+  const mobile = String(customerData.mobile || "").replace(/\D/g, "");
+
+  if (!email && !mobile) {
+    return { ok: false, reason: "Email or mobile number is required." };
+  }
+
+  const mobileNorm = normalizeMobile(mobile);
+  for (let i = 1; i < values.length; i++) {
+    const rowEmail = String(values[i][emailIdx]).trim().toLowerCase();
+    const rowMobileNorm = normalizeMobile(values[i][mobileIdx]);
+    if ((email && rowEmail === email) || (mobileNorm && rowMobileNorm === mobileNorm)) {
+      return { ok: false, reason: "Account already exists with this email or mobile." };
+    }
+  }
+
+  saveCustomerProfile(email, mobile, customerData.name, customerData.address, customerData.password);
+  return { ok: true, customer: { email, mobile, name: customerData.name, address: customerData.address } };
+}
+
+function getSheetByNameCaseInsensitive(sheetName, spreadsheet) {
+  const ss = spreadsheet || SpreadsheetApp.getActive();
+  const sheets = ss.getSheets();
+  const targetLower = sheetName.toLowerCase();
+  for (let i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName().toLowerCase() === targetLower) {
+      return sheets[i];
+    }
+  }
+  return null;
+}
+
+function normalizeMobile(mobile) {
+  const clean = String(mobile || "").replace(/\D/g, "");
+  return clean.length >= 10 ? clean.slice(-10) : clean;
+}
+
+function readLeads() {
+  ensureHeaders(SHEETS.leads, HEADERS.leads);
+  return readObjects(SHEETS.leads).map((row) => ({
+    id: String(row.id),
+    customerName: String(row.customerName),
+    mobile: String(row.mobile),
+    email: String(row.email || ""),
+    address: String(row.address),
+    agreement: String(row.agreement),
+    ipAddress: String(row.ipAddress || "Unknown"),
+    location: String(row.location || "Unknown"),
+    latitude: row.latitude === "" || row.latitude === null || row.latitude === undefined ? null : Number(row.latitude),
+    longitude: row.longitude === "" || row.longitude === null || row.longitude === undefined ? null : Number(row.longitude),
+    timestamp: String(row.timestamp),
+  }));
+}
+
+function submitLead(
+  customerName,
+  address,
+  mobile,
+  email,
+  agreement,
+  ipAddress,
+  location,
+  latitude,
+  longitude
+) {
+  if (!String(customerName || "").trim()) {
+    return { ok: false, reason: "Enter customer name." };
+  }
+
+  if (!/^[6-9]\d{9}$/.test(String(mobile))) {
+    return { ok: false, reason: "Enter a valid 10 digit mobile number." };
+  }
+
+  if (!String(address || "").trim()) {
+    return { ok: false, reason: "Enter customer address." };
+  }
+
+  if (!agreement || String(agreement).toLowerCase() !== "yes") {
+    return { ok: false, reason: "You must agree to participate in this membership contest." };
+  }
+
+  const lead = {
+    id: "LEAD-" + Math.floor(100000 + Math.random() * 900000),
+    customerName: String(customerName).trim(),
+    mobile: String(mobile),
+    email: String(email || "").trim().toLowerCase(),
+    address: String(address).trim(),
+    agreement: String(agreement),
+    ipAddress: String(ipAddress || "Unknown"),
+    location: String(location || "Unknown"),
+    latitude: latitude === null || latitude === undefined ? "" : Number(latitude),
+    longitude: longitude === null || longitude === undefined ? "" : Number(longitude),
+    timestamp: new Date().toISOString()
+  };
+
+  ensureHeaders(SHEETS.leads, HEADERS.leads);
+  appendObject(SHEETS.leads, HEADERS.leads, lead);
+
+  saveCustomerProfile(email || "", mobile, customerName, address);
+
+  return { ok: true, lead: lead };
 }

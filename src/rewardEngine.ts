@@ -33,7 +33,9 @@ export function calculateReward(shop: Shop, billAmount: number): number {
 }
 
 function calculateRewardDetails(shop: Shop, billAmount: number): RewardCalculation {
-  const isGiftShop = shop.rewardType === "gift" || shop.category.toLowerCase().includes("gift");
+  const isGiftShop = shop.rewardType === "gift" || 
+    (shop.rewardType !== "mudra" && shop.category.toLowerCase().includes("gift")) ||
+    (shop.category.toLowerCase().includes("gift") && shop.rewardBands.some((band) => band.giftItems));
 
   if (isGiftShop) {
     const matchingBand = shop.rewardBands.find(
