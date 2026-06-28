@@ -536,7 +536,7 @@ function clearExpiredSessions() {
 }
 
 function makeTemporaryPassword() {
-  return "SM-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
+  return "SM-" + Math.floor(1000 + Math.random() * 9000);
 }
 
 function makePasswordSalt() {
