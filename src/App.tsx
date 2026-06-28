@@ -1142,7 +1142,7 @@ function ShopDashboard({
   const averageBill = approved.length
     ? approved.reduce((sum, item) => sum + item.billAmount, 0) / approved.length
     : 0;
-  const isRegShop = shop.category.toLowerCase().trim() === "registration";
+  const isRegShop = shop.rewardType === "registration";
   const scanUrl = isRegShop 
     ? `${window.location.origin}/?lead=true&shop=${encodeURIComponent(shop.id)}`
     : `${window.location.origin}/?shop=${encodeURIComponent(shop.id)}`;
@@ -1242,7 +1242,7 @@ function AdminDashboard({
   const [newShopName, setNewShopName] = useState("");
   const [newShopCategory, setNewShopCategory] = useState("General");
   const [newShopMaxBillAmount, setNewShopMaxBillAmount] = useState("100000");
-  const [newShopType, setNewShopType] = useState<"mudra" | "gift">("mudra");
+  const [newShopType, setNewShopType] = useState<"mudra" | "gift" | "registration">("mudra");
   const [newShopMaxReward, setNewShopMaxReward] = useState("100");
   const [newShopCostPerScan, setNewShopCostPerScan] = useState("10");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1617,11 +1617,12 @@ function AdminDashboard({
                   Shop Reward Type
                   <select
                     value={newShopType}
-                    onChange={(e) => setNewShopType(e.target.value as "mudra" | "gift")}
+                    onChange={(e) => setNewShopType(e.target.value as "mudra" | "gift" | "registration")}
                     style={{ background: 'rgba(0,0,0,0.2)', color: 'var(--text-main)' }}
                   >
                     <option value="mudra">Mudra Points</option>
                     <option value="gift">Lucky Draw Gift</option>
+                    <option value="registration">Registration (Membership Only)</option>
                   </select>
                 </label>
               </div>

@@ -19,7 +19,7 @@ export type Shop = {
   maxBillAmount?: number;
   costPerScan: number;
   rewardBands: RewardBand[];
-  rewardType?: "mudra" | "gift";
+  rewardType?: "mudra" | "gift" | "registration";
 };
 
 export type Transaction = {
@@ -36,7 +36,7 @@ export type Transaction = {
   reward: number;
   rewardRule?: string;
   rewardDetails?: string;
-  rewardType?: "mudra" | "gift";
+  rewardType?: "mudra" | "gift" | "registration";
   giftItems?: string;
   status: "approved" | "blocked";
   timestamp: string;
