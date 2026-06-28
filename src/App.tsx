@@ -404,7 +404,12 @@ function App() {
 
   return (
     <main>
-      <TopBar view={view} setView={setView} dataStatus={dataStatus} />
+      <TopBar 
+        view={view} 
+        setView={setView} 
+        dataStatus={dataStatus} 
+        isAdmin={sessionRole === "admin" && !needsFreshLogin} 
+      />
       {view === "customer" && (
         isLeadPage ? (
           <LeadContestFlow leads={leads} setLeads={setLeads} shops={shops} />
@@ -527,7 +532,11 @@ function App() {
         )
       )}
       {view === "marketing" && (
-        <MarketingPage />
+        !session || needsFreshLogin || sessionRole !== "admin" ? (
+          <Login title="Admin Login" expectedRole="admin" onLogin={handleLogin} />
+        ) : (
+          <MarketingPage onLogout={handleLogout} />
+        )
       )}
       <InvoiceModal transaction={invoiceTxn} shops={shops} onClose={() => setInvoiceTxn(null)} />
     </main>
@@ -538,18 +547,20 @@ function TopBar({
   view,
   setView,
   dataStatus,
+  isAdmin,
 }: {
   view: View;
   setView: (view: View) => void;
   dataStatus: string;
+  isAdmin: boolean;
 }) {
-  const navItems: { id: View; label: string; icon: typeof ScanLine }[] = [
+  const navItems = [
     { id: "customer", label: "Customer", icon: ScanLine },
     { id: "shop", label: "Shop", icon: Store },
-    { id: "marketing", label: "Marketing", icon: Sparkles },
+    { id: "marketing", label: "Marketing", icon: Sparkles, adminOnly: true },
     { id: "admin", label: "Admin", icon: ShieldCheck },
-    { id: "leads", label: "Registrations", icon: Trophy },
-  ];
+    { id: "leads", label: "Registrations", icon: Trophy, adminOnly: true },
+  ].filter((item) => !item.adminOnly || isAdmin) as { id: View; label: string; icon: typeof ScanLine }[];
 
   return (
     <header className="topbar">

@@ -1,9 +1,14 @@
 import React from "react";
 import { Download, Eye, Sparkles, BookOpen, Gift, Coins, Trophy, Users, Layers, ShieldCheck, ArrowRight } from "lucide-react";
 
-export default function MarketingPage() {
+export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
   return (
     <div className="dashboard" style={{ paddingBottom: "4rem" }}>
+      {onLogout && (
+        <button style={{ float: "right", margin: "0.5rem" }} onClick={onLogout}>
+          Logout
+        </button>
+      )}
       {/* Hero Section */}
       <div className="surface" style={{ 
         position: "relative",
