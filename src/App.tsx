@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Login from "./Login";
+import MarketingPage from "./MarketingPage";
 import QRCode from "qrcode";
 import {
   Activity,
@@ -60,7 +61,7 @@ import { loadVisitorContext } from "./visitorContext";
 import InvoiceModal from "./InvoiceModal";
 import ShopEditModal from "./ShopEditModal";
 
-type View = "customer" | "shop" | "admin" | "leads";
+type View = "customer" | "shop" | "admin" | "leads" | "marketing";
 type ActiveSession = Session | null;
 
 function getGiftIcon(giftItemName: string) {
@@ -525,6 +526,9 @@ function App() {
           </div>
         )
       )}
+      {view === "marketing" && (
+        <MarketingPage />
+      )}
       <InvoiceModal transaction={invoiceTxn} shops={shops} onClose={() => setInvoiceTxn(null)} />
     </main>
   );
@@ -542,6 +546,7 @@ function TopBar({
   const navItems: { id: View; label: string; icon: typeof ScanLine }[] = [
     { id: "customer", label: "Customer", icon: ScanLine },
     { id: "shop", label: "Shop", icon: Store },
+    { id: "marketing", label: "Marketing", icon: Sparkles },
     { id: "admin", label: "Admin", icon: ShieldCheck },
     { id: "leads", label: "Registrations", icon: Trophy },
   ];
