@@ -80,6 +80,7 @@ export type Lead = {
   latitude: number | null;
   longitude: number | null;
   timestamp: string;
+  shopId?: string;
 };
 
 export type PublicAppData = {

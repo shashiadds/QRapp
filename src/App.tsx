@@ -406,7 +406,7 @@ function App() {
       <TopBar view={view} setView={setView} dataStatus={dataStatus} />
       {view === "customer" && (
         isLeadPage ? (
-          <LeadContestFlow leads={leads} setLeads={setLeads} />
+          <LeadContestFlow leads={leads} setLeads={setLeads} shops={shops} />
         ) : selectedShop ? (
           <CustomerFlow
             shop={selectedShop}
@@ -521,7 +521,7 @@ function App() {
                 <h1>Registrations</h1>
               </div>
             </div>
-            <LeadTable leads={leads} />
+            <LeadTable leads={leads} shops={shops} />
           </div>
         )
       )}
@@ -581,10 +581,16 @@ function TopBar({
 function LeadContestFlow({
   leads,
   setLeads,
+  shops,
 }: {
   leads: Lead[];
   setLeads: (leads: Lead[]) => void;
+  shops: Shop[];
 }) {
+  const queryParams = new URLSearchParams(window.location.search);
+  const shopId = queryParams.get("shop") || "";
+  const matchedShop = shops.find((s) => s.id === shopId);
+
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
@@ -629,7 +635,8 @@ function LeadContestFlow({
             mobile.trim(),
             email.trim(),
             agreement,
-            visitorContext
+            visitorContext,
+            shopId
           );
           if (result.ok && result.lead) {
             setLeads([result.lead, ...leads]);
@@ -651,6 +658,7 @@ function LeadContestFlow({
             latitude: visitorContext.latitude,
             longitude: visitorContext.longitude,
             timestamp: new Date().toISOString(),
+            shopId: shopId,
           };
           setLeads([newLead, ...leads]);
           setPhase("thankYou");
@@ -667,8 +675,8 @@ function LeadContestFlow({
       <div className="customer-panel" style={{ borderTopColor: "var(--accent-secondary)" }}>
         <div className="shop-strip" style={{ background: "#2e1a47" }}>
           <div>
-            <span>Exclusive Contest</span>
-            <h1>Membership Contest</h1>
+            <span>{matchedShop ? matchedShop.name : "Exclusive Contest"}</span>
+            <h1>{matchedShop ? `${matchedShop.name} Membership` : "Membership Contest"}</h1>
           </div>
         </div>
 
@@ -676,8 +684,8 @@ function LeadContestFlow({
           <form className="form-stack" onSubmit={handleSubmit}>
             <div className="headline">
               <Trophy size={34} style={{ color: "var(--accent-secondary)" }} />
-              <h2>Membership Registration</h2>
-              <p>Enter your details below to register for the contest.</p>
+              <h2>{matchedShop ? "Register Membership" : "Membership Registration"}</h2>
+              <p>{matchedShop ? `Enter your details below to register with ${matchedShop.name}.` : "Enter your details below to register for the contest."}</p>
             </div>
             
             <label>
@@ -757,7 +765,7 @@ function LeadContestFlow({
             </div>
             <h2 style={{ fontSize: "24px", color: "var(--text-main)", marginBottom: "8px" }}>Successfully registered for membership!</h2>
             <p style={{ color: "var(--text-muted)", fontSize: "15px", lineHeight: "1.5", maxWidth: "300px", margin: "0 auto 1.5rem auto" }}>
-              Thank you, <strong>{customerName}</strong>! We have successfully registered you (mobile: {mobile}) for the membership contest.
+              Thank you, <strong>{customerName}</strong>! We have successfully registered you (mobile: {mobile}) for the {matchedShop ? `${matchedShop.name} membership` : "membership contest"}.
             </p>
             <p className="reward-thank-you" style={{ color: "var(--accent-success)", fontWeight: 600 }}>
               Good luck! 🎉
@@ -1134,7 +1142,10 @@ function ShopDashboard({
   const averageBill = approved.length
     ? approved.reduce((sum, item) => sum + item.billAmount, 0) / approved.length
     : 0;
-  const scanUrl = `${window.location.origin}/?shop=${encodeURIComponent(shop.id)}`;
+  const isRegShop = shop.category.toLowerCase().trim() === "registration";
+  const scanUrl = isRegShop 
+    ? `${window.location.origin}/?lead=true&shop=${encodeURIComponent(shop.id)}`
+    : `${window.location.origin}/?shop=${encodeURIComponent(shop.id)}`;
 
   useEffect(() => {
     QRCode.toDataURL(scanUrl, { margin: 1, width: 240 }).then(setQrUrl);
@@ -2359,8 +2370,10 @@ function PaginationControls({
 
 function LeadTable({
   leads = [],
+  shops = [],
 }: {
   leads: Lead[];
+  shops: Shop[];
 }) {
   const [query, setQuery] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -2411,10 +2424,12 @@ function LeadTable({
           className="secondary-action" 
           style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem", width: "auto" }}
           onClick={() => {
-            const headers = ["Date", "Time", "Mobile", "Name", "Email", "Address", "Agreement", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
+            const headers = ["Date", "Time", "Shop ID", "Shop Name", "Mobile", "Name", "Email", "Address", "Agreement", "Timestamp", "IP Address", "Location", "Latitude", "Longitude"];
             const rows = filteredLeads.map(l => [
               formatTransactionDate(l.timestamp),
               formatTransactionTime(l.timestamp),
+              l.shopId || "",
+              l.shopId ? (shops.find(s => s.id === l.shopId)?.name || l.shopId) : "",
               l.mobile,
               l.customerName,
               l.email || "",
@@ -2512,6 +2527,7 @@ function LeadTable({
               <tr>
                 <th>Date</th>
                 <th>Name</th>
+                <th>Shop</th>
                 <th>Mobile</th>
                 <th>Email</th>
                 <th>Address</th>
@@ -2533,6 +2549,18 @@ function LeadTable({
                     <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
                       ID: {lead.id}
                     </div>
+                  </td>
+                  <td>
+                    {lead.shopId ? (
+                      <div>
+                        <strong>{shops.find(s => s.id === lead.shopId)?.name || lead.shopId}</strong>
+                        <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                          ID: {lead.shopId}
+                        </div>
+                      </div>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)" }}>None</span>
+                    )}
                   </td>
                   <td>{lead.mobile}</td>
                   <td>{lead.email || <span style={{ color: "var(--text-muted)" }}>None</span>}</td>

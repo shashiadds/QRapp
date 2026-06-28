@@ -78,7 +78,7 @@ const HEADERS = {
   sessions: ["token", "username", "role", "shopId", "expiresAt", "createdAt"],
   gifts: ["id", "name", "imageUrl"],
   customers: ["email", "mobile", "name", "address", "passwordSalt", "passwordHash", "updatedAt"],
-  leads: ["id", "customerName", "mobile", "email", "address", "agreement", "ipAddress", "location", "latitude", "longitude", "timestamp"],
+  leads: ["id", "customerName", "mobile", "email", "address", "agreement", "ipAddress", "location", "latitude", "longitude", "timestamp", "shopId"],
 };
 
 const SEED_SHOPS = [
@@ -230,7 +230,8 @@ function doPost(event) {
         body.ipAddress,
         body.location,
         body.latitude,
-        body.longitude
+        body.longitude,
+        body.shopId
       )
     );
   }
@@ -1784,6 +1785,7 @@ function readLeads() {
     latitude: row.latitude === "" || row.latitude === null || row.latitude === undefined ? null : Number(row.latitude),
     longitude: row.longitude === "" || row.longitude === null || row.longitude === undefined ? null : Number(row.longitude),
     timestamp: String(row.timestamp),
+    shopId: String(row.shopId || "")
   }));
 }
 
@@ -1796,7 +1798,8 @@ function submitLead(
   ipAddress,
   location,
   latitude,
-  longitude
+  longitude,
+  shopId
 ) {
   if (!String(customerName || "").trim()) {
     return { ok: false, reason: "Enter customer name." };
@@ -1825,7 +1828,8 @@ function submitLead(
     location: String(location || "Unknown"),
     latitude: latitude === null || latitude === undefined ? "" : Number(latitude),
     longitude: longitude === null || longitude === undefined ? "" : Number(longitude),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    shopId: String(shopId || "")
   };
 
   ensureHeaders(SHEETS.leads, HEADERS.leads);

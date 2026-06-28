@@ -79,7 +79,8 @@ export function submitSheetsLead(
   mobile: string,
   email: string,
   agreement: boolean,
-  visitorContext: VisitorContext
+  visitorContext: VisitorContext,
+  shopId?: string
 ) {
   return request<{ ok: boolean; lead: any }>("submitLead", {
     customerName,
@@ -91,6 +92,7 @@ export function submitSheetsLead(
     location: visitorContext.location,
     latitude: visitorContext.latitude,
     longitude: visitorContext.longitude,
+    shopId: shopId || "",
   });
 }
 
