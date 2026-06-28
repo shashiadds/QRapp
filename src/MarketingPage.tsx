@@ -4,22 +4,22 @@ import { Download, Eye, Sparkles, Gift, Coins, Trophy, Users, Layers, Star } fro
 export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
   // 12 avatars representing the separated girls
   const testimonials = [
-    { name: "Priya Patil", location: "Pune", reward: "₹150 Cashback", type: "modern", img: "/assets/avatar_modern_1.jpg", text: "खरेदी केली आणि १० सेकंदात कॅशबॅक थेट बँक खात्यात जमा झाला!" },
-    { name: "Anjali Deshmukh", location: "Mumbai", reward: "Smart Watch Winner", type: "modern", img: "/assets/avatar_modern_2.jpg", text: "लकी ड्रॉ मध्ये उत्कृष्ट गिफ्ट मिळाले, विश्वासार्ह डिजिटल मंच आहे!" },
-    { name: "Sneha Joshi", location: "Nashik", reward: "₹500 Coupon", type: "modern", img: "/assets/avatar_modern_3.jpg", text: "प्रत्येक खरेदीवर निश्चित बक्षीस मिळवून खरेदीचा आनंद द्विगुणित झाला." },
-    { name: "Kiran Shinde", location: "Kolhapur", reward: "₹100 Cashback", type: "modern", img: "/assets/avatar_modern_4.jpg", text: "वापरण्यास अत्यंत सोपे, फक्त क्यूआर स्कॅन करा आणि बक्षीस मिळवा!" },
-    { name: "Pooja More", location: "Sangli", reward: "Gift Hamper", type: "modern", img: "/assets/avatar_modern_5.jpg", text: "उत्कृष्ट कस्टमर अनुभव! ExMudra ॲप खूपच उपयुक्त आहे." },
-    { name: "Tanvi Sawant", location: "Solapur", reward: "₹250 Cashback", type: "modern", img: "/assets/avatar_modern_6.jpg", text: "माझ्या आवडत्या दुकानातून निश्चित डिस्काउंट कूपन मिळाले." },
-    { name: "Meera Kulkarni", location: "Pune", reward: "₹500 Cashback", type: "traditional", img: "/assets/avatar_traditional_1.jpg", text: "दुकानात स्कॅन करण्याची सोय खूप छान आहे, लगेच कॅशबॅक मिळतो." },
-    { name: "Savita Jadhav", location: "Satara", reward: "Mixer Grinder", type: "traditional", img: "/assets/avatar_traditional_2.jpg", text: "लकी ड्रॉ मध्ये घरगुती वापराचे सुंदर गिफ्ट मिळाले, धन्यवाद!" },
-    { name: "Swati Ghadge", location: "Baramati", reward: "₹100 Coupon", type: "traditional", img: "/assets/avatar_traditional_3.jpg", text: "नोंदणी मोफत आणि अतिशय सोपी आहे. प्रत्येक दुकानात स्कॅन व्हायला हवे!" },
-    { name: "Rutuja Kale", location: "Nagpur", reward: "₹300 Cashback", type: "traditional", img: "/assets/avatar_traditional_4.jpg", text: "ॲप वरून सोप्या पद्धतीने पॉईंट्स जमा होतात आणि खरेदी स्वस्त पडते." },
-    { name: "Archana Pawar", location: "Nanded", reward: "Iron Box Winner", type: "traditional", img: "/assets/avatar_traditional_5.jpg", text: "ExMudra मुळे आम्हाला आमच्या खरेदीवर हमखास बचत होते." },
-    { name: "Lata Gaikwad", location: "Aurangabad", reward: "₹200 Cashback", type: "traditional", img: "/assets/avatar_traditional_6.jpg", text: "मोफत नोंदणी करून मला पहिल्याच स्कॅनवर विशेष गिफ्ट मिळाले!" }
+    { name: "प्रिया पाटील", location: "पुणे", reward: "₹१५० कॅशबॅक", type: "मॉडर्न लुक", img: "/assets/avatar_modern_1.jpg", text: "खरेदी केली आणि १० सेकंदात कॅशबॅक थेट बँक खात्यात जमा झाला!" },
+    { name: "अंजली देशमुख", location: "मुंबई", reward: "स्मार्ट वॉच विजेती", type: "मॉडर्न लुक", img: "/assets/avatar_modern_2.jpg", text: "लकी ड्रॉ मध्ये उत्कृष्ट गिफ्ट मिळाले, विश्वासार्ह डिजिटल मंच आहे!" },
+    { name: "स्नेहा जोशी", location: "नाशिक", reward: "₹५०० कूपन", type: "मॉडर्न लुक", img: "/assets/avatar_modern_3.jpg", text: "प्रत्येक खरेदीवर निश्चित बक्षीस मिळवून खरेदीचा आनंद द्विगुणित झाला." },
+    { name: "किरण शिंदे", location: "कोल्हापूर", reward: "₹१०० कॅशबॅक", type: "मॉडर्न लुक", img: "/assets/avatar_modern_4.jpg", text: "वापरण्यास अत्यंत सोपे, फक्त क्यूआर स्कॅन करा आणि बक्षीस मिळवा!" },
+    { name: "पूजा मोरे", location: "सांगली", reward: "गिफ्ट हॅम्पर", type: "मॉडर्न लुक", img: "/assets/avatar_modern_5.jpg", text: "उत्कृष्ट कस्टमर अनुभव! ExMudra ॲप खूपच उपयुक्त आहे." },
+    { name: "तन्वी सावंत", location: "सोलापूर", reward: "₹२५० कॅशबॅक", type: "मॉर्न लुक", img: "/assets/avatar_modern_6.jpg", text: "माझ्या आवडत्या दुकानातून निश्चित डिस्काउंट कूपन मिळाले." },
+    { name: "मीरा कुलकर्णी", location: "पुणे", reward: "₹५०० कॅशबॅक", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_1.jpg", text: "दुकानात स्कॅन करण्याची सोय खूप छान आहे, लगेच कॅशबॅक मिळतो." },
+    { name: "सविता जाधव", location: "सातारा", reward: "मिक्सर ग्राइंडर", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_2.jpg", text: "लकी ड्रॉ मध्ये घरगुती वापराचे सुंदर गिफ्ट मिळाले, धन्यवाद!" },
+    { name: "स्वाती घाडगे", location: "बारामती", reward: "₹१०० कूपन", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_3.jpg", text: "नोंदणी मोफत आणि अतिशय सोपी आहे. प्रत्येक दुकानात स्कॅन व्हायला हवे!" },
+    { name: "ऋतुजा काळे", location: "नागपूर", reward: "₹३०० कॅशबॅक", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_4.jpg", text: "ॲप वरून सोप्या पद्धतीने पॉईंट्स जमा होतात आणि खरेदी स्वस्त पडते." },
+    { name: "अर्चना पवार", location: "नांदेड", reward: "इस्त्री मशीन", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_5.jpg", text: "ExMudra मुळे आम्हाला आमच्या खरेदीवर हमखास बचत होते." },
+    { name: "लता गायकवाड", location: "औरंगाबाद", reward: "₹२०० कॅशबॅक", type: "पारंपारिक लुक", img: "/assets/avatar_traditional_6.jpg", text: "मोफत नोंदणी करून मला पहिल्याच स्कॅनवर विशेष गिफ्ट मिळाले!" }
   ];
 
   return (
-    <div className="dashboard" style={{ paddingBottom: "5rem" }}>
+    <div className="dashboard marathi-text" style={{ paddingBottom: "5rem", fontFamily: "'Noto Sans Marathi', sans-serif" }}>
       {onLogout && (
         <button 
           style={{ 
@@ -37,7 +37,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
           }}
           onClick={onLogout}
         >
-          Logout Admin
+          लॉगआउट ॲडमीन
         </button>
       )}
 
@@ -65,7 +65,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
             textTransform: "uppercase",
             marginBottom: "1.5rem"
           }}>
-            <Sparkles size={14} /> ExMudra Smart QR
+            <Sparkles size={14} /> ExMudra स्मार्ट QR
           </span>
           <h1 style={{ 
             fontSize: "3rem", 
@@ -84,7 +84,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
             lineHeight: 1.6, 
             marginBottom: "2rem" 
           }}>
-            Attract customers with instant cashback & lucky draw entries directly on mobile QR scan. Simple, fast, and 100% secure.
+            ग्राहकांना मोबाईलवर QR स्कॅन करून झटपट कॅशबॅक आणि लकी ड्रॉ जिंकण्याची संधी द्या. सोपे, जलद आणि १००% सुरक्षित!
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
@@ -96,7 +96,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", fontSize: "1rem", padding: "0.75rem 1.5rem" }}
             >
               <Eye size={18} />
-              Open Pitch Deck
+              सादरीकरण (Pitch Deck) पहा
             </a>
             <a 
               href="/assets/exmudra_marketing.pdf" 
@@ -105,7 +105,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", fontSize: "1rem", padding: "0.75rem 1.5rem" }}
             >
               <Download size={18} />
-              Download Marketing PDF
+              विपणन (Marketing) PDF डाउनलोड करा
             </a>
           </div>
         </div>
@@ -130,10 +130,10 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
         {/* Pink Top Girl Section */}
         <div className="surface" style={{ padding: "2rem", display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "1.5rem", alignItems: "center" }}>
           <div>
-            <span style={{ fontSize: "0.75rem", background: "rgba(219, 39, 119, 0.2)", color: "#fbcfe8", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>CUSTOMER OFFER</span>
+            <span style={{ fontSize: "0.75rem", background: "rgba(219, 39, 119, 0.2)", color: "#fbcfe8", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>ग्राहकांसाठी ऑफर</span>
             <h3 style={{ fontSize: "1.5rem", fontWeight: 800, margin: "0.5rem 0 1rem 0" }}>या खरेदीवर नक्की कॅशबॅक हवाय?</h3>
             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: 1.5, marginBottom: "1rem" }}>
-              Encourage visitors to pull out their phones and scan the ExMudra Smart QR code on billing to receive instant rewards in just 1 second.
+              बिलिंगच्या वेळी ग्राहकांना मोबाईल काढून ExMudra स्मार्ट QR कोड स्कॅन करण्यास सांगा जेणेकरून त्यांना फक्त १ सेकंदात झटपट बक्षीस मिळेल.
             </p>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.9rem", color: "var(--text-main)" }}>
               <li style={{ display: "flex", gap: "8px" }}><span style={{ color: "#db2777" }}>✔</span> १००% मोफत आणि सुरक्षित</li>
@@ -148,10 +148,10 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
         {/* Teal Top Girl Section */}
         <div className="surface" style={{ padding: "2rem", display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "1.5rem", alignItems: "center" }}>
           <div>
-            <span style={{ fontSize: "0.75rem", background: "rgba(13, 148, 136, 0.2)", color: "#ccfbf1", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>DUKAN BENEFITS</span>
+            <span style={{ fontSize: "0.75rem", background: "rgba(13, 148, 136, 0.2)", color: "#ccfbf1", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>दुकानदारांचे फायदे</span>
             <h3 style={{ fontSize: "1.5rem", fontWeight: 800, margin: "0.5rem 0 1rem 0" }}>आपल्या दुकानाची खास ओळख</h3>
             <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: 1.5, marginBottom: "1rem" }}>
-              Enable quick registrations to build customer databases, track repeat purchases, and manage shop loyalty systems seamlessly.
+              नवीन ग्राहकांची जलद नोंदणी करा, वारंवार होणाऱ्या खरेदीचा मागोवा घ्या आणि आपल्या दुकानाची ग्राहक निष्ठा सोप्या पद्धतीने वाढवा.
             </p>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.9rem", color: "var(--text-main)" }}>
               <li style={{ display: "flex", gap: "8px" }}><span style={{ color: "#0d9488" }}>✔</span> ग्राहक निष्ठा वाढवा</li>
@@ -187,9 +187,9 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
           }}>
             <Gift size={24} />
           </div>
-          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>Multiple Reward Types</h3>
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>विविध बक्षीस प्रकार</h3>
           <p style={{ color: "var(--text-muted)", lineHeight: 1.5, fontSize: "0.95rem" }}>
-            Offers Cashback, Lucky Draw entries, Discount Coupons, and Free Gifts to motivate diverse shopping customer segments.
+            विविध खरेदीदारांना आकर्षित करण्यासाठी कॅशबॅक, लकी ड्रॉ, डिस्काउंट कूपन आणि मोफत भेटवस्तू यांसारखे पर्याय उपलब्ध.
           </p>
         </div>
 
@@ -208,9 +208,9 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
           }}>
             <Layers size={24} />
           </div>
-          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>In-Store Growth Tools</h3>
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>दुकानातील वाढीसाठी साधने</h3>
           <p style={{ color: "var(--text-muted)", lineHeight: 1.5, fontSize: "0.95rem" }}>
-            7 practical retail steps to drive scans: hook boards, QR stands, winner announcements, sticker placement, and festive campaigns.
+            स्कॅनिंग वाढवण्यासाठी ७ सोपे मार्ग: काउंटरवर हुक बोर्ड, आकर्षक QR स्टँड, विजेत्यांची घोषणा आणि सणांमधील मोहिमा.
           </p>
         </div>
 
@@ -229,9 +229,9 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
           }}>
             <Users size={24} />
           </div>
-          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>Business & Setup Projections</h3>
+          <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.75rem" }}>व्यवसाय आणि सेटअप अंदाज</h3>
           <p style={{ color: "var(--text-muted)", lineHeight: 1.5, fontSize: "0.95rem" }}>
-            Affordable subscriptions (₹199 - ₹499/month) for shops to build their loyalty databases and trigger repeat visits cost-effectively.
+            दुकानांना स्वतःचा ग्राहक डेटाबेस तयार करण्यासाठी आणि कमी खर्चात विक्री वाढवण्यासाठी सुलभ मासिक वर्गणी (₹१९९ - ₹४९९/महिना).
           </p>
         </div>
       </div>
@@ -240,10 +240,10 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
       <div style={{ marginBottom: "3rem" }}>
         <h2 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "8px" }}>
           <Star size={24} style={{ color: "#facc15" }} />
-          यशस्वी ग्राहक आणि विजेते (12 Active Members)
+          यशस्वी ग्राहक आणि विजेते (१२ सक्रिय सदस्य)
         </h2>
         <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem", fontSize: "0.95rem" }}>
-          Separated profiles of active ExMudra members showcasing customer satisfaction and success rewards received across regions.
+          विविध भागातील समाधानी ग्राहक आणि त्यांना मिळालेल्या बक्षिसांची माहिती दर्शवणारी यादी.
         </p>
 
         <div style={{ 
@@ -289,17 +289,17 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
                   fontSize: "0.75rem", 
                   padding: "3px 8px", 
                   borderRadius: "9999px", 
-                  background: test.reward.includes("Cashback") ? "rgba(34, 197, 94, 0.15)" : "rgba(168, 85, 247, 0.15)",
-                  color: test.reward.includes("Cashback") ? "#4ade80" : "#c084fc",
+                  background: test.reward.includes("कॅशबॅक") ? "rgba(34, 197, 94, 0.15)" : "rgba(168, 85, 247, 0.15)",
+                  color: test.reward.includes("कॅशबॅक") ? "#4ade80" : "#c084fc",
                   fontWeight: "bold"
                 }}>
                   {test.reward}
                 </span>
                 <span style={{ 
                   fontSize: "0.75rem", 
-                  color: test.type === "modern" ? "#93c5fd" : "#fca5a5"
+                  color: test.type.includes("मॉडर्न") ? "#93c5fd" : "#fca5a5"
                 }}>
-                  {test.type === "modern" ? "Modern Fit" : "Traditional Fit"}
+                  {test.type}
                 </span>
               </div>
               <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>
@@ -311,7 +311,7 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
       </div>
 
       {/* Visual Content Section */}
-      <h2 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "1.5rem" }}>Core Project Overview & Analytics</h2>
+      <h2 style={{ fontSize: "1.75rem", fontWeight: 800, marginBottom: "1.5rem" }}>मुख्य प्रकल्प अहवाल आणि विश्लेषण</h2>
       
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", gap: "2rem" }}>
         
@@ -325,10 +325,10 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
             />
           </div>
           <div>
-            <span style={{ fontSize: "0.75rem", background: "rgba(168, 85, 247, 0.2)", color: "#f3e8ff", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>BUSINESS REPORT</span>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0.5rem 0 0.25rem 0" }}>ExMudra Business & Project Report</h3>
+            <span style={{ fontSize: "0.75rem", background: "rgba(168, 85, 247, 0.2)", color: "#f3e8ff", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>व्यवसाय अहवाल</span>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0.5rem 0 0.25rem 0" }}>ExMudra व्यवसाय आणि प्रकल्प अहवाल</h3>
             <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", lineHeight: 1.4 }}>
-              Complete market overview containing Phase 1/Phase 2 launch targets, revenue projections, setup fee structures, and growth estimates.
+              फेज १ आणि फेज २ मधील उद्दिष्टे, महसूल अंदाज, सेटअप फी रचना आणि वाढीच्या योजनेचा सविस्तर अहवाल.
             </p>
           </div>
         </div>
@@ -343,10 +343,10 @@ export default function MarketingPage({ onLogout }: { onLogout?: () => void }) {
             />
           </div>
           <div>
-            <span style={{ fontSize: "0.75rem", background: "rgba(34, 197, 94, 0.2)", color: "#dcfce7", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>CAMPAIGN POSTER</span>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0.5rem 0 0.25rem 0" }}>10 Shops & 100 Customers Campaign</h3>
+            <span style={{ fontSize: "0.75rem", background: "rgba(34, 197, 94, 0.2)", color: "#dcfce7", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>मोहीम पोस्टर</span>
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0.5rem 0 0.25rem 0" }}>१० दुकाने आणि १०० ग्राहक मोहीम</h3>
             <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", lineHeight: 1.4 }}>
-              Marathi onboarding drive summary showcasing targeted segments, registration flow steps, and promotional lucky draw items.
+              ऑनबोर्डिंग मोहिमेची रूपरेषा, ग्राहक नोंदणीचे टप्पे आणि लकी ड्रॉ मधील भेटवस्तूंची माहिती देणारा मराठी फलक.
             </p>
           </div>
         </div>
