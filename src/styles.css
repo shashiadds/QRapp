@@ -1,8 +1,8 @@
 :root {
-  --bg-color: #0f172a;
-  --card-bg: rgba(30, 41, 59, 0.7);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --bg-color: #f8fafc;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
   --accent-primary: #3b82f6;
   --accent-secondary: #8b5cf6;
   --accent-success: #10b981;
@@ -22,8 +22,8 @@
 body {
   margin: 0;
   min-width: 320px;
-  background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
-                    radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.15), transparent 40%);
+  background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 40%),
+                    radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.06), transparent 40%);
 }
 
 button,
@@ -43,9 +43,9 @@ main {
 
 .topbar {
   align-items: center;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   gap: 18px;
   justify-content: space-between;
@@ -125,11 +125,11 @@ main {
 
 .customer-panel {
   background: var(--card-bg);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-top: 3px solid var(--accent-primary);
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   margin: 0 auto;
   max-width: 430px;
@@ -175,8 +175,8 @@ main {
 select,
 input,
 textarea {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 6px;
   color: var(--text-main);
   min-height: 44px;
@@ -260,7 +260,7 @@ label {
 
 .secondary-action,
 .download-link {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--text-main);
 }
 
@@ -328,10 +328,10 @@ label {
 .surface {
   background: var(--card-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-top: 3px solid var(--accent-secondary);
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -339,8 +339,8 @@ label {
 .surface:hover,
 .customer-panel:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.1);
-  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08), 0 0 20px rgba(59, 130, 246, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .metric:nth-child(1) { border-top-color: var(--accent-primary); }
@@ -487,7 +487,7 @@ table {
 
 th,
 td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   padding: 12px 10px;
   text-align: left;
   white-space: nowrap;
@@ -537,7 +537,7 @@ th {
 
 .shop-row {
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 7px;
   display: flex;
   justify-content: space-between;
@@ -1437,8 +1437,8 @@ th {
   font-size: 0.8rem;
   min-height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   color: var(--text-main);
   font-weight: 600;
   display: inline-flex;
@@ -1448,8 +1448,8 @@ th {
 }
 
 .btn-view-invoice:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
 }
 
